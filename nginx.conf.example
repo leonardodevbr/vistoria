@@ -1,0 +1,82 @@
+# Configuração Nginx para Sistema de Vistoria de Imóveis
+# Salve este arquivo em: /etc/nginx/sites-available/vistoria
+
+server {
+    listen 80;
+    listen [::]:80;
+    
+    # Substitua pelo seu domínio
+    server_name seu-dominio.com www.seu-dominio.com;
+    
+    # Raiz do projeto - APONTA PARA A PASTA PUBLIC
+    root /var/www/vistoria-imovel/public;
+    
+    index index.php index.html;
+    
+    # Charset
+    charset utf-8;
+    
+    # Logs
+    access_log /var/log/nginx/vistoria-access.log;
+    error_log /var/log/nginx/vistoria-error.log;
+    
+    # Tamanho máximo de upload (para fotos)
+    client_max_body_size 10M;
+    
+    # Location principal
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    
+    # PHP-FPM
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+    
+    # Negar acesso a arquivos ocultos
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+    
+    # Desabilitar logs para favicon e robots
+    location = /favicon.ico { 
+        access_log off; 
+        log_not_found off; 
+    }
+    
+    location = /robots.txt { 
+        access_log off; 
+        log_not_found off; 
+    }
+}
+
+# Configuração SSL (depois de obter certificado com Let's Encrypt)
+# Descomente após executar: certbot --nginx -d seu-dominio.com
+#
+# server {
+#     listen 443 ssl http2;
+#     listen [::]:443 ssl http2;
+#     
+#     server_name seu-dominio.com www.seu-dominio.com;
+#     
+#     ssl_certificate /etc/letsencrypt/live/seu-dominio.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/seu-dominio.com/privkey.pem;
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers HIGH:!aNULL:!MD5;
+#     
+#     root /var/www/vistoria-imovel/public;
+#     index index.php index.html;
+#     
+#     location / {
+#         try_files $uri $uri/ /index.php?$query_string;
+#     }
+#     
+#     location ~ \.php$ {
+#         fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+#         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+#         include fastcgi_params;
+#     }
+# }
