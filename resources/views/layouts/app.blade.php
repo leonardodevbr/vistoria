@@ -149,6 +149,12 @@
             border: 1px solid #c3e6cb;
         }
         
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
         .item-card {
             background: #f8f9fa;
             border-radius: 8px;
@@ -357,6 +363,23 @@
         .header-logout:hover {
             color: #1a1a1a;
         }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .header-actions a {
+            color: #555;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .header-actions a:hover {
+            color: #1a1a1a;
+        }
     </style>
     
     @stack('styles')
@@ -369,12 +392,22 @@
                     <img src="{{ asset('logo.png') }}" alt="Vistoria de Imóvel" class="header-logo">
                     <span>Vistoria de Imóvel</span>
                 </h1>
-                <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="link-icon header-logout">
-                        <i data-lucide="log-out" width="18" height="18"></i> Sair
-                    </button>
-                </form>
+                <div class="header-actions">
+                    <a href="{{ route('profile.password') }}">
+                        <i data-lucide="lock" width="16" height="16"></i> Alterar senha
+                    </a>
+                    @if(auth()->user()->username === 'admin')
+                        <a href="{{ route('users.index') }}">
+                            <i data-lucide="users" width="16" height="16"></i> Usuários
+                        </a>
+                    @endif
+                    <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                        @csrf
+                        <button type="submit" class="link-icon header-logout">
+                            <i data-lucide="log-out" width="18" height="18"></i> Sair
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

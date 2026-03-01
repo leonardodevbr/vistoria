@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\InspectionController;
+use App\Http\Controllers\UserController;
 use App\Models\User;
 
 Route::get('/login', function () {
@@ -36,6 +37,17 @@ Route::post('/logout', function (Request $request) {
 })->name('logout');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/profile/password', [UserController::class, 'showChangePasswordForm'])->name('profile.password');
+    Route::put('/profile/password', [UserController::class, 'changePassword'])->name('profile.password.update');
+
+    Route::middleware(['admin'])->prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/create', [UserController::class, 'create'])->name('create');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [UserController::class, 'edit'])->name('edit');
+        Route::put('/{user}/password', [UserController::class, 'updatePassword'])->name('password.update');
+    });
+
     Route::get('/', [InspectionController::class, 'index'])->name('inspections.index');
     Route::post('/inspections/create', [InspectionController::class, 'create'])->name('inspections.create');
     Route::get('/inspections/{inspection}/edit', [InspectionController::class, 'edit'])->name('inspections.edit');
