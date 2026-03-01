@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Inspection;
 use App\Models\InspectionItem;
+use App\Models\InspectionItemPhoto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
@@ -33,14 +34,34 @@ class InspectionController extends Controller
 
     public function update(Request $request, Inspection $inspection)
     {
-        $inspection->update([
+        $data = [
             'endereco' => $request->endereco,
+            'cep' => $request->cep ? preg_replace('/\D/', '', $request->cep) : null,
+            'logradouro' => $request->logradouro,
+            'numero' => $request->numero,
+            'complemento' => $request->complemento,
+            'bairro' => $request->bairro,
+            'cidade' => $request->cidade,
+            'uf' => $request->uf ? strtoupper(substr($request->uf, 0, 2)) : null,
             'responsavel' => $request->responsavel,
-            'data_vistoria' => $request->data_vistoria ?? now()
-        ]);
+            'locatario_nome' => $request->locatario_nome,
+            'data_vistoria' => $request->filled('data_vistoria') ? $request->data_vistoria : $inspection->data_vistoria
+        ];
 
-        return redirect()->route('inspections.edit', $inspection)
-            ->with('success', 'Vistoria atualizada com sucesso!');
+        $inspection->fill($data);
+        if ($inspection->logradouro || $inspection->cep) {
+            $inspection->endereco_completo = $inspection->endereco_formatado;
+        }
+        $inspection->save();
+
+        return redirect()->route('inspections.items', $inspection)
+            ->with('success', 'Dados salvos. Agora adicione os itens por ambiente.');
+    }
+
+    public function items(Inspection $inspection)
+    {
+        $inspection->load(['items.photos']);
+        return view('inspections.items', compact('inspection'));
     }
 
     public function storeItem(Request $request, Inspection $inspection)
@@ -53,15 +74,23 @@ class InspectionController extends Controller
             'estado_fisico' => 'required|in:Novo,Seminovo,Ótimo,Bom,Regular',
             'funcionamento' => 'required|in:Funcionando perfeitamente,Funcionando,Funcionando com ressalvas,Não testado,Não funciona,Não se aplica',
             'observacoes' => 'nullable|string',
-            'foto' => 'nullable|image|max:5120'
+            'fotos' => 'nullable|array',
+            'fotos.*' => 'image|max:5120'
         ]);
 
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('fotos', 'public');
-            $validated['foto'] = $path;
-        }
+        $validated['foto'] = null;
+        $item = $inspection->items()->create($validated);
 
-        $inspection->items()->create($validated);
+        $files = $request->file('fotos');
+        if ($files) {
+            foreach ($files as $index => $file) {
+                $path = $file->store('fotos', 'public');
+                $item->photos()->create(['path' => $path]);
+                if ($index === 0) {
+                    $item->update(['foto' => $path]);
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,
@@ -74,7 +103,9 @@ class InspectionController extends Controller
         if ($item->foto) {
             Storage::disk('public')->delete($item->foto);
         }
-        
+        foreach ($item->photos as $photo) {
+            Storage::disk('public')->delete($photo->path);
+        }
         $item->delete();
 
         return response()->json([
@@ -85,7 +116,7 @@ class InspectionController extends Controller
 
     public function generatePdf(Inspection $inspection)
     {
-        $inspection->load('items');
+        $inspection->load(['items.photos']);
         
         $pdf = Pdf::loadView('inspections.pdf', compact('inspection'));
         
@@ -98,8 +129,10 @@ class InspectionController extends Controller
             if ($item->foto) {
                 Storage::disk('public')->delete($item->foto);
             }
+            foreach ($item->photos as $photo) {
+                Storage::disk('public')->delete($photo->path);
+            }
         }
-        
         $inspection->delete();
 
         return redirect()->route('inspections.index')

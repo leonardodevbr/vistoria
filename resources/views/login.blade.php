@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - Vistoria de Imóvel</title>
-    
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <style>
         * {
             margin: 0;
@@ -37,9 +42,13 @@
             margin-bottom: 2rem;
         }
         
-        .logo-icon {
-            font-size: 4rem;
+        .logo-img {
+            max-width: 180px;
+            height: auto;
             margin-bottom: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         h1 {
@@ -122,59 +131,69 @@
             border: 1px solid #c3e6cb;
         }
         
-        .info-text {
-            text-align: center;
-            color: #999;
-            font-size: 0.8rem;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e0e0e0;
+        .icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <div class="logo-icon">🏠</div>
+            <img src="{{ asset('logo.png') }}" alt="Vistoria de Imóvel" class="logo-img">
             <h1>Vistoria de Imóvel</h1>
             <p class="subtitle">Sistema de Vistoria</p>
         </div>
         
         @if(session('erro'))
             <div class="alert alert-danger">
-                ❌ {{ session('erro') }}
+                {{ session('erro') }}
             </div>
         @endif
         
         @if(session('success'))
             <div class="alert alert-success">
-                ✅ {{ session('success') }}
+                {{ session('success') }}
             </div>
         @endif
         
-        <form method="POST" action="/login">
+        <form method="POST" action="{{ route('login') }}">
             @csrf
             
             <div class="form-group">
-                <label class="form-label">🔒 Senha de Acesso</label>
+                <label class="form-label icon-wrap"><i data-lucide="user" width="14" height="14"></i> Usuário</label>
                 <input 
-                    type="password" 
-                    name="senha" 
+                    type="text" 
+                    name="username" 
                     class="form-control" 
-                    placeholder="Digite a senha"
+                    placeholder="Nome de usuário"
+                    value="{{ old('username') }}"
                     autofocus
                     required>
             </div>
             
-            <button type="submit" class="btn">
-                🔓 Entrar
+            <div class="form-group">
+                <label class="form-label icon-wrap"><i data-lucide="lock" width="14" height="14"></i> Senha</label>
+                <input 
+                    type="password" 
+                    name="password" 
+                    class="form-control" 
+                    placeholder="Senha"
+                    required>
+            </div>
+            
+            <button type="submit" class="btn btn-icon">
+                <i data-lucide="log-in" width="18" height="18"></i> Entrar
             </button>
         </form>
-        
-        <p class="info-text">
-            💡 Senha padrão: <strong>vistoria2024</strong><br>
-            <small>(Você pode alterar no código)</small>
-        </p>
     </div>
+    <script>document.addEventListener('DOMContentLoaded', function() { lucide.createIcons(); });</script>
 </body>
 </html>

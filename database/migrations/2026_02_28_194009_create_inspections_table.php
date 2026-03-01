@@ -13,8 +13,17 @@ return new class extends Migration
     {
         Schema::create('inspections', function (Blueprint $table) {
             $table->id();
-            $table->string('endereco')->nullable();
+            $table->string('endereco')->nullable(); // identificação / imóvel vistoriado
+            $table->text('endereco_completo')->nullable();
+            $table->string('cep', 9)->nullable();
+            $table->string('logradouro')->nullable();
+            $table->string('numero')->nullable();
+            $table->string('complemento')->nullable();
+            $table->string('bairro')->nullable();
+            $table->string('cidade')->nullable();
+            $table->string('uf', 2)->nullable();
             $table->string('responsavel')->nullable();
+            $table->string('locatario_nome')->nullable();
             $table->timestamp('data_vistoria')->nullable();
             $table->timestamps();
         });

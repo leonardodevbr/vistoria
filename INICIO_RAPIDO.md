@@ -1,42 +1,41 @@
-# 🚀 Início Rápido
+# Início Rápido
 
-## ✅ Sistema Instalado com Sucesso!
+## Sistema instalado
 
 O servidor está rodando em: **http://localhost:8000**
 
-### 🔐 Acesso
+### Acesso
 
 - **URL:** http://localhost:8000
-- **Senha:** `vistoria2024`
+- **Login:** usuário e senha (após rodar `php artisan db:seed`, use usuário `admin` e senha `admin`)
 
 ---
 
-## 📱 Como Usar
+## Como usar
 
-### 1. Fazer Login
-- Acesse http://localhost:8000
-- Digite a senha: `vistoria2024`
+### 1. Fazer login
+- Acesse http://localhost:8000 (será redirecionado para /login se não estiver logado)
+- Informe usuário e senha
 - Clique em "Entrar"
 
-### 2. Criar uma Nova Vistoria
-- Clique em "➕ Nova Vistoria"
-- Preencha o endereço e nome do responsável (opcional)
-- Clique em "💾 Salvar Informações"
+### 2. Criar uma nova vistoria
+- Clique em "Nova Vistoria"
+- Preencha endereço (resumo e completo), responsável pela vistoria, nome do locatário e data
+- Clique em "Salvar e continuar para itens"
 
-### 3. Adicionar Itens
-- Preencha o formulário de item
-- Use os campos pesquisáveis (Categoria, Marca/Modelo, Localização)
-- Tire uma foto se necessário
-- Clique em "✅ Adicionar Item"
+### 3. Adicionar itens por ambiente
+- Na tela de itens, selecione primeiro o **Ambiente** (ex.: Cozinha, Sala)
+- Preencha categoria, item, marca/modelo, estado físico, funcionamento, observações e foto
+- Clique em "Adicionar item"
+- Repita para outros itens do mesmo ambiente; depois altere o ambiente e adicione os itens do próximo cômodo
 
 ### 4. Gerar PDF
-- Após adicionar todos os itens
-- Clique em "📄 Gerar PDF da Vistoria"
-- O PDF será baixado automaticamente
+- Após adicionar os itens, clique em "Gerar PDF da vistoria"
+- O laudo em PDF será baixado com endereço completo e espaço para assinaturas (responsável e locatário)
 
 ---
 
-## 🛠️ Comandos Úteis
+## Comandos úteis
 
 ### Iniciar o Servidor
 ```bash
@@ -65,25 +64,24 @@ php artisan config:clear
 php artisan view:clear
 ```
 
----
+### Criar usuário inicial (primeira vez)
 
-## 🔧 Alterar Senha
-
-Para alterar a senha de acesso, edite o arquivo `routes/web.php`:
-
-```php
-// Linha 8 e linha 13
-$senha = 'SUA_NOVA_SENHA';
+```bash
+php artisan db:seed
 ```
 
+Isso cria o usuário `admin` com senha `admin`. Altere a senha após o primeiro acesso (por exemplo via tinker ou criando tela de alteração de senha).
+
 ---
 
-## 📊 Estrutura do Banco
+## Estrutura do banco
 
 - **inspections** - Vistorias
   - id
   - endereco
+  - endereco_completo
   - responsavel
+  - locatario_nome
   - data_vistoria
   - timestamps
 
@@ -102,7 +100,7 @@ $senha = 'SUA_NOVA_SENHA';
 
 ---
 
-## 🌐 Para Hospedar Online
+## Para hospedar online
 
 1. **Escolha um serviço de hospedagem:**
    - InfinityFree (gratuito)
@@ -122,7 +120,7 @@ php artisan storage:link
 
 ---
 
-## ❓ Problemas Comuns
+## Problemas comuns
 
 ### Erro de conexão com banco
 - Verifique se o MySQL está rodando
@@ -137,43 +135,52 @@ php artisan storage:link
 - Execute: `php artisan key:generate`
 - Verifique permissões das pastas storage e bootstrap/cache
 
+### Docker no Windows – erro 500 (tempnam / permissões)
+Ao rodar o projeto em **Docker no Windows**, o volume montado fica com dono do host e o PHP no container (usuário `www-data`) não consegue escrever em `storage` e `bootstrap/cache`, gerando erro ao compilar views.
+
+**Solução:** execute dentro do container, na pasta do projeto (ajuste o caminho e o nome do container se for o caso):
+
+```bash
+# Do host (PowerShell/WSL), com o container já rodando:
+docker exec -it <nome_ou_id_do_container> bash -c "cd /home/dev/apps/vistoria && chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache"
+```
+
+Ou use o script do projeto (dentro do container, na pasta do app):
+
+```bash
+docker exec -it <nome_ou_id_do_container> bash -c "cd /home/dev/apps/vistoria && ./fix-permissions-docker.sh"
+```
+
+Depois de rodar uma vez, o erro 500 de "tempnam(): file created in the system's temporary directory" deve sumir. Se recriar o container ou o volume, rode de novo.
+
 ---
 
-## 📞 Estrutura de Arquivos
+## Estrutura de arquivos
 
 ```
-vistoria-imovel/
+vistoria/
 ├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   └── InspectionController.php
-│   │   └── Middleware/
-│   │       └── SimplePasswordMiddleware.php
+│   ├── Http/Controllers/
+│   │   └── InspectionController.php
 │   └── Models/
 │       ├── Inspection.php
 │       └── InspectionItem.php
-├── database/
-│   └── migrations/
-│       ├── 2026_02_28_194009_create_inspections_table.php
-│       └── 2026_02_28_194010_create_inspection_items_table.php
-├── resources/
-│   └── views/
-│       ├── layouts/
-│       │   └── app.blade.php
-│       ├── inspections/
-│       │   ├── index.blade.php
-│       │   ├── form.blade.php
-│       │   └── pdf.blade.php
-│       └── login.blade.php
-├── routes/
-│   └── web.php
-├── .env
-└── README.md
+├── database/migrations/
+├── resources/views/
+│   ├── layouts/app.blade.php
+│   ├── inspections/
+│   │   ├── index.blade.php
+│   │   ├── form.blade.php
+│   │   ├── items.blade.php
+│   │   └── pdf.blade.php
+│   └── login.blade.php
+├── routes/web.php
+└── .env
 ```
 
 ---
 
-## ✨ Pronto para Usar!
+## Pronto para usar
 
 Acesse agora: **http://localhost:8000**
 

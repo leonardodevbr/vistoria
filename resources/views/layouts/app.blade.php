@@ -7,8 +7,17 @@
     <title>Vistoria de Imóvel</title>
     
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+
     <style>
         * {
             margin: 0;
@@ -293,6 +302,45 @@
             align-items: center;
             justify-content: center;
         }
+        
+        .btn-icon, .link-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-icon svg, .link-icon svg, .icon-wrap svg {
+            flex-shrink: 0;
+        }
+        .icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+        .page-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .header-logo {
+            height: 36px;
+            width: auto;
+            max-width: 120px;
+            object-fit: contain;
+            vertical-align: middle;
+        }
     </style>
     
     @stack('styles')
@@ -301,10 +349,16 @@
     <div class="header">
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>🏠 Vistoria de Imóvel</h1>
-                <a href="{{ route('logout') }}" style="color: white; text-decoration: none; font-size: 1.5rem;" title="Sair">
-                    🚪
-                </a>
+                <h1 class="header-brand">
+                    <img src="{{ asset('logo.png') }}" alt="Vistoria de Imóvel" class="header-logo">
+                    <span>Vistoria de Imóvel</span>
+                </h1>
+                <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="link-icon" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0.25rem 0;">
+                        <i data-lucide="log-out" width="18" height="18"></i> Sair
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -316,6 +370,34 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/pt.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', function() { lucide.createIcons(); });</script>
+    
+    @if(session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false
+            });
+        });
+    </script>
+    @endif
+    @if(session('erro') || session('error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro!',
+                text: '{{ session('erro') ?? session('error') }}'
+            });
+        });
+    </script>
+    @endif
     
     @stack('scripts')
 </body>
