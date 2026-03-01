@@ -39,18 +39,20 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem;
+            background: #fff;
+            color: #1a1a1a;
+            padding: 0.875rem 1rem;
             position: sticky;
             top: 0;
             z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-bottom: 1px solid #eee;
         }
         
         .header h1 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
+            color: #1a1a1a;
         }
         
         .content {
@@ -341,6 +343,20 @@
             object-fit: contain;
             vertical-align: middle;
         }
+        .header-logout {
+            background: none;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 0.25rem 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .header-logout:hover {
+            color: #1a1a1a;
+        }
     </style>
     
     @stack('styles')
@@ -355,7 +371,7 @@
                 </h1>
                 <form action="{{ route('logout') }}" method="POST" style="display: inline;">
                     @csrf
-                    <button type="submit" class="link-icon" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0.25rem 0;">
+                    <button type="submit" class="link-icon header-logout">
                         <i data-lucide="log-out" width="18" height="18"></i> Sair
                     </button>
                 </form>
