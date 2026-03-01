@@ -25,9 +25,11 @@
             </h3>
             
             @if($inspection->endereco || $inspection->endereco_completo || $inspection->endereco_formatado)
-                <p style="margin-bottom: 0.5rem;" class="icon-wrap">
-                    <i data-lucide="map-pin" width="14" height="14"></i>
-                    @if($inspection->endereco)<strong>Imóvel:</strong> {{ $inspection->endereco }}@endif
+                <p style="margin-bottom: 0.25rem;" class="icon-wrap">
+                    <i data-lucide="map-pin" width="14" height="14"></i> <strong>Imóvel</strong>
+                </p>
+                <p style="margin-bottom: 0.5rem; padding-left: 1.5rem;">
+                    @if($inspection->endereco){{ $inspection->endereco }}@endif
                     @if($inspection->endereco && ($inspection->endereco_formatado ?: $inspection->endereco_completo)) — @endif
                     @if($inspection->endereco_formatado){{ Str::limit($inspection->endereco_formatado, 50) }}@elseif($inspection->endereco_completo){{ Str::limit($inspection->endereco_completo, 50) }}@endif
                 </p>

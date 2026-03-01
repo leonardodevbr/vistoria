@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('item');
             $table->string('marca_modelo')->nullable();
             $table->string('localizacao');
-            $table->enum('estado_fisico', ['Novo', 'Seminovo', 'Ótimo', 'Bom', 'Regular']);
+            $table->enum('estado_fisico', ['Novo', 'Seminovo', 'Ótimo', 'Bom', 'Regular', 'Não se aplica']);
             $table->enum('funcionamento', [
                 'Funcionando perfeitamente', 
                 'Funcionando', 
@@ -29,6 +29,7 @@ return new class extends Migration
             ]);
             $table->text('observacoes')->nullable();
             $table->string('foto')->nullable();
+            $table->boolean('is_draft')->default(false);
             $table->timestamps();
         });
     }

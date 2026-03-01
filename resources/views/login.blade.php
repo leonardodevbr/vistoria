@@ -18,20 +18,26 @@
             box-sizing: border-box;
         }
         
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
+            padding: 0.75rem;
         }
         
         .login-container {
             background: white;
             border-radius: 16px;
-            padding: 2rem;
+            padding: 1.5rem;
             width: 100%;
             max-width: 400px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -39,13 +45,13 @@
         
         .logo {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.25rem;
         }
         
         .logo-img {
-            max-width: 180px;
+            max-width: 140px;
             height: auto;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
             display: block;
             margin-left: auto;
             margin-right: auto;
@@ -54,19 +60,19 @@
         h1 {
             text-align: center;
             color: #333;
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.35rem;
+            margin-bottom: 0.25rem;
         }
         
         .subtitle {
             text-align: center;
             color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            margin-bottom: 1.25rem;
         }
         
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
         
         .form-label {
@@ -110,6 +116,33 @@
         
         .btn:active {
             transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.85;
+            transform: none;
+        }
+        
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: btn-spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.4rem;
+        }
+        
+        @keyframes btn-spin {
+            to { transform: rotate(360deg); }
         }
         
         .alert {
@@ -164,7 +197,7 @@
             </div>
         @endif
         
-        <form method="POST" action="{{ route('login') }}">
+        <form id="loginForm" method="POST" action="{{ route('login') }}">
             @csrf
             
             <div class="form-group">
@@ -189,11 +222,24 @@
                     required>
             </div>
             
-            <button type="submit" class="btn btn-icon">
+            <button type="submit" class="btn btn-icon" id="btnLogin">
                 <i data-lucide="log-in" width="18" height="18"></i> Entrar
             </button>
         </form>
     </div>
-    <script>document.addEventListener('DOMContentLoaded', function() { lucide.createIcons(); });</script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        lucide.createIcons();
+        var form = document.getElementById('loginForm');
+        var btn = document.getElementById('btnLogin');
+        if (form && btn) {
+            form.addEventListener('submit', function() {
+                if (btn.disabled) return;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="btn-spinner"></span> Entrando...';
+            });
+        }
+    });
+    </script>
 </body>
 </html>

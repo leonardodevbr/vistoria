@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Inspection extends Model
 {
     protected $fillable = [
+        'documento_numero',
         'endereco',
         'endereco_completo',
         'cep',

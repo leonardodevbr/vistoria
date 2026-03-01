@@ -42,6 +42,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/inspections/{inspection}', [InspectionController::class, 'update'])->name('inspections.update');
     Route::get('/inspections/{inspection}/items', [InspectionController::class, 'items'])->name('inspections.items');
     Route::post('/inspections/{inspection}/items', [InspectionController::class, 'storeItem'])->name('inspections.items.store');
+    Route::put('/inspections/items/{item}', [InspectionController::class, 'updateItem'])->name('inspections.items.update');
     Route::delete('/inspections/items/{item}', [InspectionController::class, 'deleteItem'])->name('inspections.items.delete');
     Route::get('/inspections/{inspection}/pdf', [InspectionController::class, 'generatePdf'])->name('inspections.pdf');
     Route::delete('/inspections/{inspection}', [InspectionController::class, 'destroy'])->name('inspections.destroy');

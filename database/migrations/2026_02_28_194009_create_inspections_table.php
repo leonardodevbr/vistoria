@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('inspections', function (Blueprint $table) {
             $table->id();
+            $table->string('documento_numero', 20)->nullable(); // ex: 27382001 (aleatório + sequencial)
             $table->string('endereco')->nullable(); // identificação / imóvel vistoriado
             $table->text('endereco_completo')->nullable();
             $table->string('cep', 9)->nullable();

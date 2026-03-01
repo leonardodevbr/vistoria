@@ -17,7 +17,12 @@ class InspectionItem extends Model
         'estado_fisico',
         'funcionamento',
         'observacoes',
-        'foto'
+        'foto',
+        'is_draft'
+    ];
+
+    protected $casts = [
+        'is_draft' => 'boolean',
     ];
 
     public function inspection(): BelongsTo

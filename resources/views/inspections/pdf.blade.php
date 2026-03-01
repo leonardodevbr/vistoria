@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laudo de Vistoria - #{{ $inspection->id }}</title>
+    <title>Laudo de Vistoria - #{{ $inspection->documento_numero ?? $inspection->id }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -117,13 +117,23 @@
             margin-right: 6px;
         }
         
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            margin: 4px 6px 4px 0;
-            font-size: 9pt;
-            border: 1px solid #999;
-            background: #f5f5f5;
+        .item-dados {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+            margin: 8px 0 12px 0;
+        }
+        
+        .item-dados td {
+            padding: 4px 10px 4px 0;
+            vertical-align: top;
+            border: none;
+        }
+        
+        .item-dados td:first-child {
+            width: 28%;
+            font-weight: bold;
+            color: #444;
         }
         
         .observacoes-box {
@@ -134,10 +144,49 @@
             font-size: 10pt;
         }
         
+        .photos-group {
+            margin-top: 14px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #fafafa;
+        }
+        
+        .photos-group-title {
+            font-size: 10pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #444;
+        }
+        
+        .photos-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .photos-table td {
+            vertical-align: top;
+            padding: 4px;
+            width: 33.33%;
+        }
+        
+        .photo-wrap {
+            text-align: center;
+        }
+        
         .photo {
-            max-width: 280px;
-            margin-top: 10px;
+            max-width: 100%;
+            width: 180px;
+            height: auto;
             border: 1px solid #ccc;
+            display: block;
+            margin: 0 auto 4px auto;
+        }
+        
+        .imovel-titulo {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 6px;
         }
         
         .assinaturas {
@@ -210,19 +259,22 @@
 </head>
 <body>
     <div class="doc-title">Laudo de Vistoria de Imóvel</div>
-    <div class="doc-subtitle">Documento nº {{ $inspection->id }} | Data da vistoria: {{ $inspection->data_vistoria->format('d/m/Y') }} às {{ $inspection->data_vistoria->format('H:i') }}</div>
+    <div class="doc-subtitle">Documento nº {{ $inspection->documento_numero ?? $inspection->id }} | Data da vistoria: {{ $inspection->data_vistoria->format('d/m/Y') }} às {{ $inspection->data_vistoria->format('H:i') }}</div>
     
     <div class="section-title">1. Identificação do imóvel</div>
     
+    @if($inspection->endereco)
+    <div class="imovel-titulo">{{ $inspection->endereco }}</div>
+    @endif
     <div class="endereco-box">
         @if($inspection->endereco_formatado)
             {{ $inspection->endereco_formatado }}
         @elseif($inspection->endereco_completo)
             {!! nl2br(e($inspection->endereco_completo)) !!}
-        @elseif($inspection->endereco)
-            {{ $inspection->endereco }}
-        @else
+        @elseif(!$inspection->endereco)
             <em>Endereço não informado.</em>
+        @else
+            {{ $inspection->endereco }}
         @endif
     </div>
     
@@ -239,13 +291,14 @@
             <div class="info-label">Data e hora:</div>
             <div class="info-value">{{ $inspection->data_vistoria->format('d/m/Y \à\s H:i') }}</div>
         </div>
+        @php $itemsPdf = $inspection->items->where('is_draft', false); @endphp
         <div class="info-row">
             <div class="info-label">Total de itens vistoriados:</div>
-            <div class="info-value">{{ $inspection->items->count() }}</div>
+            <div class="info-value">{{ $itemsPdf->count() }}</div>
         </div>
     </div>
     
-    @if($inspection->items->count() > 0)
+    @if($itemsPdf->count() > 0)
         <div class="section-title">3. Resumo por categoria</div>
         <table class="resumo-table">
             <thead>
@@ -255,7 +308,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($inspection->items->groupBy('categoria') as $categoria => $items)
+                @foreach($itemsPdf->groupBy('categoria') as $categoria => $items)
                 <tr>
                     <td>{{ $categoria ?: 'Sem categoria' }}</td>
                     <td>{{ $items->count() }} {{ $items->count() == 1 ? 'item' : 'itens' }}</td>
@@ -266,7 +319,7 @@
         
         <div class="section-title">4. Itens vistoriados</div>
         
-        @foreach($inspection->items->groupBy('localizacao') as $localizacao => $items)
+        @foreach($itemsPdf->groupBy('localizacao') as $localizacao => $items)
             <div class="category-block">
                 <div class="category-heading">{{ $localizacao ?: 'Sem localização' }}</div>
                 
@@ -274,12 +327,13 @@
                     <div class="item-block">
                         <div class="item-name">{{ $item->item }}</div>
                         
-                        @if($item->marca_modelo)
-                        <div class="item-line"><strong>Marca/Modelo:</strong> {{ $item->marca_modelo }}</div>
-                        @endif
-                        
-                        <div class="item-line"><strong>Estado físico:</strong> <span class="badge">{{ $item->estado_fisico }}</span></div>
-                        <div class="item-line"><strong>Funcionamento:</strong> <span class="badge">{{ $item->funcionamento }}</span></div>
+                        <table class="item-dados">
+                            @if($item->marca_modelo)
+                            <tr><td>Marca/Modelo</td><td>{{ $item->marca_modelo }}</td></tr>
+                            @endif
+                            <tr><td>Estado físico</td><td>{{ $item->estado_fisico }}</td></tr>
+                            <tr><td>Funcionamento</td><td>{{ $item->funcionamento }}</td></tr>
+                        </table>
                         
                         @if($item->observacoes)
                         <div class="observacoes-box">
@@ -288,11 +342,24 @@
                         </div>
                         @endif
                         
-                        @foreach($item->allPhotos() as $photoPath)
-                        <div>
-                            <img src="{{ public_path('storage/' . $photoPath) }}" class="photo" alt="Foto do item">
+                        @php $photos = $item->allPhotos(); @endphp
+                        @if($photos->isNotEmpty())
+                        <div class="photos-group">
+                            <div class="photos-group-title">Fotos ({{ $photos->count() }})</div>
+                            <table class="photos-table"><tr>
+                                @foreach($photos as $idx => $photoPath)
+                                    @if($idx > 0 && $idx % 3 === 0)
+                                    </tr><tr>
+                                    @endif
+                                    <td><div class="photo-wrap"><img src="{{ public_path('storage/' . $photoPath) }}" class="photo" alt="Foto"></div></td>
+                                @endforeach
+                                @php $rest = (3 - ($photos->count() % 3)) % 3; @endphp
+                                @for($i = 0; $i < $rest; $i++)
+                                    <td></td>
+                                @endfor
+                            </tr></table>
                         </div>
-                        @endforeach
+                        @endif
                     </div>
                 @endforeach
             </div>

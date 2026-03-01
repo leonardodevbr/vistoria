@@ -22,7 +22,10 @@ class InspectionController extends Controller
         $inspection = Inspection::create([
             'data_vistoria' => now()
         ]);
-        
+        $inspection->update([
+            'documento_numero' => sprintf('%04d%04d', random_int(1000, 9999), $inspection->id)
+        ]);
+
         return redirect()->route('inspections.edit', $inspection);
     }
 
@@ -34,25 +37,78 @@ class InspectionController extends Controller
 
     public function update(Request $request, Inspection $inspection)
     {
-        $data = [
-            'endereco' => $request->endereco,
-            'cep' => $request->cep ? preg_replace('/\D/', '', $request->cep) : null,
-            'logradouro' => $request->logradouro,
-            'numero' => $request->numero,
-            'complemento' => $request->complemento,
-            'bairro' => $request->bairro,
-            'cidade' => $request->cidade,
-            'uf' => $request->uf ? strtoupper(substr($request->uf, 0, 2)) : null,
-            'responsavel' => $request->responsavel,
-            'locatario_nome' => $request->locatario_nome,
-            'data_vistoria' => $request->filled('data_vistoria') ? $request->data_vistoria : $inspection->data_vistoria
-        ];
+        $isAutosave = $request->header('X-Autosave') === '1';
+
+        if ($isAutosave) {
+            $validated = $request->validate([
+                'endereco' => 'nullable|string|max:255',
+                'cep' => 'nullable|string|max:9',
+                'logradouro' => 'nullable|string|max:255',
+                'numero' => 'nullable|string|max:20',
+                'complemento' => 'nullable|string|max:100',
+                'bairro' => 'nullable|string|max:100',
+                'cidade' => 'nullable|string|max:100',
+                'uf' => 'nullable|string|max:2',
+                'responsavel' => 'nullable|string|max:255',
+                'locatario_nome' => 'nullable|string|max:255',
+                'data_vistoria' => 'nullable|date',
+            ]);
+            $data = [
+                'endereco' => $validated['endereco'] ?? null,
+                'cep' => !empty($validated['cep']) ? preg_replace('/\D/', '', $validated['cep']) : null,
+                'logradouro' => $validated['logradouro'] ?? null,
+                'numero' => $validated['numero'] ?? null,
+                'complemento' => $validated['complemento'] ?? null,
+                'bairro' => $validated['bairro'] ?? null,
+                'cidade' => $validated['cidade'] ?? null,
+                'uf' => !empty($validated['uf']) ? strtoupper(substr($validated['uf'], 0, 2)) : null,
+                'responsavel' => $validated['responsavel'] ?? null,
+                'locatario_nome' => $validated['locatario_nome'] ?? null,
+                'data_vistoria' => !empty($validated['data_vistoria']) ? $validated['data_vistoria'] : $inspection->data_vistoria,
+            ];
+        } else {
+            $validated = $request->validate([
+                'endereco' => 'required|string|max:255',
+                'cep' => 'nullable|string|max:9',
+                'logradouro' => 'nullable|string|max:255',
+                'numero' => 'nullable|string|max:20',
+                'complemento' => 'nullable|string|max:100',
+                'bairro' => 'nullable|string|max:100',
+                'cidade' => 'nullable|string|max:100',
+                'uf' => 'nullable|string|max:2',
+                'responsavel' => 'required|string|max:255',
+                'locatario_nome' => 'nullable|string|max:255',
+                'data_vistoria' => 'required|date',
+            ], [
+                'endereco.required' => 'Informe o imóvel vistoriado (ex: Apto 101, Casa 2).',
+                'responsavel.required' => 'Informe o responsável pela vistoria.',
+                'data_vistoria.required' => 'Informe a data e hora da vistoria.',
+                'data_vistoria.date' => 'Data da vistoria inválida.',
+            ]);
+            $data = [
+                'endereco' => $validated['endereco'],
+                'cep' => !empty($validated['cep']) ? preg_replace('/\D/', '', $validated['cep']) : null,
+                'logradouro' => $validated['logradouro'] ?? null,
+                'numero' => $validated['numero'] ?? null,
+                'complemento' => $validated['complemento'] ?? null,
+                'bairro' => $validated['bairro'] ?? null,
+                'cidade' => $validated['cidade'] ?? null,
+                'uf' => !empty($validated['uf']) ? strtoupper(substr($validated['uf'], 0, 2)) : null,
+                'responsavel' => $validated['responsavel'],
+                'locatario_nome' => $validated['locatario_nome'] ?? null,
+                'data_vistoria' => $validated['data_vistoria'],
+            ];
+        }
 
         $inspection->fill($data);
         if ($inspection->logradouro || $inspection->cep) {
             $inspection->endereco_completo = $inspection->endereco_formatado;
         }
         $inspection->save();
+
+        if ($isAutosave) {
+            return response()->json(['success' => true]);
+        }
 
         return redirect()->route('inspections.items', $inspection)
             ->with('success', 'Dados salvos. Agora adicione os itens por ambiente.');
@@ -61,7 +117,8 @@ class InspectionController extends Controller
     public function items(Inspection $inspection)
     {
         $inspection->load(['items.photos']);
-        return view('inspections.items', compact('inspection'));
+        $draftItem = $inspection->items()->where('is_draft', true)->latest()->first();
+        return view('inspections.items', compact('inspection', 'draftItem'));
     }
 
     public function storeItem(Request $request, Inspection $inspection)
@@ -71,7 +128,7 @@ class InspectionController extends Controller
             'item' => 'required|string',
             'marca_modelo' => 'nullable|string',
             'localizacao' => 'required|string',
-            'estado_fisico' => 'required|in:Novo,Seminovo,Ótimo,Bom,Regular',
+            'estado_fisico' => 'required|in:Novo,Seminovo,Ótimo,Bom,Regular,Não se aplica',
             'funcionamento' => 'required|in:Funcionando perfeitamente,Funcionando,Funcionando com ressalvas,Não testado,Não funciona,Não se aplica',
             'observacoes' => 'nullable|string',
             'fotos' => 'nullable|array',
@@ -79,6 +136,7 @@ class InspectionController extends Controller
         ]);
 
         $validated['foto'] = null;
+        $validated['is_draft'] = ($validated['item'] === '(em preenchimento)');
         $item = $inspection->items()->create($validated);
 
         $files = $request->file('fotos');
@@ -94,7 +152,79 @@ class InspectionController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Item adicionado com sucesso!'
+            'message' => 'Item adicionado com sucesso!',
+            'id' => $item->id
+        ]);
+    }
+
+    public function updateItem(Request $request, InspectionItem $item)
+    {
+        $isAutosave = $request->header('X-Autosave') === '1';
+
+        if ($isAutosave) {
+            $validated = $request->validate([
+                'categoria' => 'nullable|string',
+                'item' => 'nullable|string',
+                'marca_modelo' => 'nullable|string',
+                'localizacao' => 'nullable|string',
+                'estado_fisico' => 'nullable|in:Novo,Seminovo,Ótimo,Bom,Regular,Não se aplica',
+                'funcionamento' => 'nullable|in:Funcionando perfeitamente,Funcionando,Funcionando com ressalvas,Não testado,Não funciona,Não se aplica',
+                'observacoes' => 'nullable|string',
+                'fotos' => 'nullable|array',
+                'fotos.*' => 'image|max:5120'
+            ]);
+            $itemVal = trim($validated['item'] ?? '');
+            $estadoVal = $validated['estado_fisico'] ?? '';
+            $funcVal = $validated['funcionamento'] ?? '';
+            $item->fill([
+                'categoria' => $validated['categoria'] ?? null,
+                'item' => $itemVal !== '' ? $itemVal : '(em preenchimento)',
+                'marca_modelo' => $validated['marca_modelo'] ?? null,
+                'localizacao' => $validated['localizacao'] ?? $item->localizacao,
+                'estado_fisico' => $estadoVal !== '' ? $estadoVal : 'Não se aplica',
+                'funcionamento' => $funcVal !== '' ? $funcVal : 'Não se aplica',
+                'observacoes' => $validated['observacoes'] ?? null,
+                'is_draft' => true,
+            ]);
+        } else {
+            $validated = $request->validate([
+                'categoria' => 'nullable|string',
+                'item' => 'required|string',
+                'marca_modelo' => 'nullable|string',
+                'localizacao' => 'required|string',
+                'estado_fisico' => 'required|in:Novo,Seminovo,Ótimo,Bom,Regular,Não se aplica',
+                'funcionamento' => 'required|in:Funcionando perfeitamente,Funcionando,Funcionando com ressalvas,Não testado,Não funciona,Não se aplica',
+                'observacoes' => 'nullable|string',
+                'fotos' => 'nullable|array',
+                'fotos.*' => 'image|max:5120'
+            ]);
+            $item->fill([
+                'categoria' => $validated['categoria'] ?? null,
+                'item' => $validated['item'],
+                'marca_modelo' => $validated['marca_modelo'] ?? null,
+                'localizacao' => $validated['localizacao'],
+                'estado_fisico' => $validated['estado_fisico'],
+                'funcionamento' => $validated['funcionamento'],
+                'observacoes' => $validated['observacoes'] ?? null,
+                'is_draft' => $validated['item'] === '(em preenchimento)',
+            ]);
+        }
+        $item->save();
+
+        $files = $request->file('fotos');
+        if ($files) {
+            foreach ($files as $index => $file) {
+                $path = $file->store('fotos', 'public');
+                $item->photos()->create(['path' => $path]);
+                if (!$item->foto) {
+                    $item->update(['foto' => $path]);
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item atualizado com sucesso!'
         ]);
     }
 
