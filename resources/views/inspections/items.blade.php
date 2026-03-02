@@ -940,10 +940,10 @@ function startCameraModal() {
     cameraPreviewImg.removeAttribute('src');
 
     var constraintsList = [
-        { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
-        { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
-        { video: { facingMode: 'environment' }, audio: false },
-        { video: { facingMode: 'user' }, audio: false },
+        { video: { facingMode: 'environment', width: { max: 1280 }, height: { max: 720 } }, audio: false },
+        { video: { facingMode: 'user', width: { max: 1280 }, height: { max: 720 } }, audio: false },
+        { video: { facingMode: 'environment', width: { max: 1024 }, height: { max: 768 } }, audio: false },
+        { video: { facingMode: 'user', width: { max: 1024 }, height: { max: 768 } }, audio: false },
         { video: true }
     ];
 
@@ -1026,27 +1026,43 @@ document.getElementById('btnCloseCamera').addEventListener('click', function() {
     closeCameraModal();
 });
 
+var CAPTURE_MAX_SIZE = 1280;
+var CAPTURE_JPEG_QUALITY = 0.82;
+
 document.getElementById('btnCapture').addEventListener('click', function() {
     if (!cameraVideo.videoWidth || !cameraVideo.videoHeight) return;
     var video = cameraVideo;
     function doCapture() {
+        var w = video.videoWidth;
+        var h = video.videoHeight;
+        var scale = 1;
+        if (w > CAPTURE_MAX_SIZE || h > CAPTURE_MAX_SIZE) {
+            scale = w > h ? CAPTURE_MAX_SIZE / w : CAPTURE_MAX_SIZE / h;
+        }
+        var cw = Math.round(w * scale);
+        var ch = Math.round(h * scale);
         var canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        canvas.width = cw;
+        canvas.height = ch;
         var ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
+        ctx.drawImage(video, 0, 0, w, h, 0, 0, cw, ch);
         canvas.toBlob(function(blob) {
             if (!blob) return;
             var file = new File([blob], 'captura-' + Date.now() + '.jpg', { type: 'image/jpeg' });
             showCameraPreview(file);
-        }, 'image/jpeg', 1);
+        }, 'image/jpeg', CAPTURE_JPEG_QUALITY);
+    }
+    function scheduleCapture() {
+        requestAnimationFrame(function() {
+            requestAnimationFrame(doCapture);
+        });
     }
     if (video.readyState >= 2) {
-        requestAnimationFrame(doCapture);
+        scheduleCapture();
     } else {
         video.addEventListener('canplay', function onCanPlay() {
             video.removeEventListener('canplay', onCanPlay);
-            setTimeout(function() { requestAnimationFrame(doCapture); }, 150);
+            setTimeout(scheduleCapture, 200);
         }, { once: true });
     }
 });
