@@ -13,19 +13,19 @@
     @endif
 </div>
 
-<div id="permissionsBanner" class="card permissions-banner" style="border-left: 4px solid #2563eb;">
-    <h3 class="icon-wrap" style="margin-bottom: 0.5rem;"><i data-lucide="shield-check" width="20" height="20"></i> Permissões necessárias</h3>
-    <p style="color: #444; font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.5;">
-        Para validar o laudo da vistoria, o sistema precisa registrar a <strong>localização do dispositivo</strong> e usar a <strong>câmera</strong> ao tirar fotos dos itens. Esses dados compõem o laudo e garantem a autenticidade da vistoria perante o locatário.
-    </p>
-    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
-        Clique no botão abaixo para autorizar. O navegador poderá solicitar o acesso à localização e à câmera.
-    </p>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-        <button type="button" id="btnRequestPermissions" class="btn btn-primary btn-icon">
-            <i data-lucide="check-circle" width="18" height="18"></i> Autorizar localização e câmera
-        </button>
-        <span id="permissionsBannerStatus" style="font-size: 0.9rem; color: #666;"></span>
+<div id="permissionsModal" class="permissions-modal" style="display: none;">
+    <div class="permissions-modal-overlay"></div>
+    <div class="permissions-modal-box">
+        <h3 class="icon-wrap" style="margin-bottom: 0.75rem;"><i data-lucide="shield-alert" width="22" height="22"></i> Permissões necessárias</h3>
+        <p style="color: #444; font-size: 0.95rem; margin-bottom: 0.75rem; line-height: 1.5;">
+            Para validar o laudo da vistoria, o sistema precisa de acesso à <strong>localização do dispositivo</strong> e à <strong>câmera</strong>. Esses dados compõem o laudo e garantem a autenticidade da vistoria perante o locatário.
+        </p>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.25rem;">
+            Está faltando pelo menos uma permissão. Ative a localização e a câmera nas configurações do navegador ou do aparelho e volte para continuar.
+        </p>
+        <a href="{{ route('inspections.index') }}" class="btn btn-primary btn-icon">
+            <i data-lucide="arrow-left" width="18" height="18"></i> Voltar ao início
+        </a>
     </div>
 </div>
 
@@ -492,6 +492,9 @@
 .camera-preview-wrap.visible { display: flex; }
 .camera-preview-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
 .camera-modal-actions { display: flex; gap: 0.5rem; padding: 1rem; justify-content: center; flex-wrap: wrap; }
+.permissions-modal { position: fixed; inset: 0; z-index: 10001; display: flex; align-items: center; justify-content: center; padding: 1rem; pointer-events: auto; }
+.permissions-modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); pointer-events: auto; cursor: default; }
+.permissions-modal-box { position: relative; background: #fff; border-radius: 12px; max-width: 420px; width: 100%; padding: 1.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.3); pointer-events: auto; }
 .item-card { position: relative; padding-top: 3rem; }
 .item-card-actions { position: absolute; top: 0.5rem; right: 0.5rem; left: auto; display: flex; flex-direction: row; align-items: center; gap: 0.5rem; z-index: 2; flex-wrap: nowrap; }
 .item-card-actions .edit-btn,
@@ -691,48 +694,30 @@ async function appendGeolocationToFormData(formData) {
     }
 }
 
-(function setupPermissionsBanner() {
-    var btn = document.getElementById('btnRequestPermissions');
-    var statusEl = document.getElementById('permissionsBannerStatus');
-    if (!btn || !statusEl) return;
-    btn.addEventListener('click', function() {
-        statusEl.textContent = 'Solicitando permissões...';
+(function checkPermissionsAndShowModalIfNeeded() {
+    var modal = document.getElementById('permissionsModal');
+    if (!modal) return;
+    function showModal() {
+        modal.style.display = 'flex';
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        function requestCamera() {
-            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-                statusEl.textContent = (statusEl.textContent || '').replace('Solicitando permissões...', '') + (statusEl.textContent ? ' ' : '') + 'Câmera: não disponível neste navegador.';
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-                return;
-            }
-            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-                .then(function(stream) {
-                    stream.getTracks().forEach(function(t) { t.stop(); });
-                    statusEl.textContent = statusEl.textContent.replace('Solicitando permissões...', '').trim();
-                    statusEl.textContent = (statusEl.textContent ? statusEl.textContent + ' ' : '') + 'Câmera autorizada. Permissões concluídas.';
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                })
-                .catch(function() {
-                    statusEl.textContent = (statusEl.textContent ? statusEl.textContent + ' ' : '') + 'Câmera negada. Você pode ativar nas configurações do navegador.';
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                });
+    }
+    function permissionStateNotGranted(state) {
+        return state && state !== 'granted';
+    }
+    Promise.all([
+        typeof navigator.permissions !== 'undefined' && navigator.permissions.query
+            ? navigator.permissions.query({ name: 'geolocation' }).then(function(p) { return p.state; }).catch(function() { return 'granted'; })
+            : Promise.resolve('granted'),
+        typeof navigator.permissions !== 'undefined' && navigator.permissions.query
+            ? navigator.permissions.query({ name: 'camera' }).then(function(p) { return p.state; }).catch(function() { return 'granted'; })
+            : Promise.resolve('granted')
+    ]).then(function(results) {
+        var geo = results[0];
+        var cam = results[1];
+        if (permissionStateNotGranted(geo) || permissionStateNotGranted(cam)) {
+            showModal();
         }
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function() {
-                    statusEl.textContent = 'Localização autorizada. ';
-                    requestCamera();
-                },
-                function() {
-                    statusEl.textContent = 'Localização negada. Ative nas configurações do navegador se quiser registrar a localização nos itens. ';
-                    requestCamera();
-                },
-                { timeout: 15000, maximumAge: 0 }
-            );
-        } else {
-            statusEl.textContent = 'Localização não disponível. ';
-            requestCamera();
-        }
-    });
+    }).catch(function() {});
 })();
 
 function showAddItemAutosaveStatus(msg, isError) {
