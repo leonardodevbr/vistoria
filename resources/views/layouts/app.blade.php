@@ -381,6 +381,77 @@
         .header-actions a:hover {
             color: #1a1a1a;
         }
+        .header-menu-wrap {
+            position: relative;
+        }
+        .header-hamburger {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            color: #555;
+            border-radius: 8px;
+        }
+        .header-hamburger:hover {
+            background: rgba(0,0,0,0.06);
+            color: #1a1a1a;
+        }
+        .header-hamburger span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 1px;
+        }
+        .header-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 6px;
+            min-width: 200px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 1px solid #e2e8f0;
+            padding: 6px 0;
+            z-index: 1000;
+            display: none;
+        }
+        .header-dropdown.open {
+            display: block;
+        }
+        .header-dropdown a,
+        .header-dropdown .header-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 10px 14px;
+            color: #555;
+            text-decoration: none;
+            font-size: 0.95rem;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .header-dropdown a:hover,
+        .header-dropdown .header-dropdown-item:hover {
+            background: #f1f5f9;
+            color: #1a1a1a;
+        }
+        .header-dropdown form {
+            padding: 0;
+            margin: 0;
+        }
     </style>
     
     @stack('styles')
@@ -393,21 +464,28 @@
                     <img src="{{ asset('logo.png') }}" alt="Vistoria de Imóvel" class="header-logo">
                     <span>Vistoria de Imóvel</span>
                 </h1>
-                <div class="header-actions">
-                    <a href="{{ route('profile.password') }}">
-                        <i data-lucide="lock" width="16" height="16"></i> Alterar senha
-                    </a>
-                    @if(auth()->user()->username === 'admin')
-                        <a href="{{ route('users.index') }}">
-                            <i data-lucide="users" width="16" height="16"></i> Usuários
+                <div class="header-actions header-menu-wrap">
+                    <button type="button" class="header-hamburger" id="headerHamburger" aria-label="Menu" aria-expanded="false" aria-haspopup="true">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="header-dropdown" id="headerDropdown" role="menu">
+                        <a href="{{ route('profile.password') }}" role="menuitem">
+                            <i data-lucide="lock" width="16" height="16"></i> Alterar senha
                         </a>
-                    @endif
-                    <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-                        @csrf
-                        <button type="submit" class="link-icon header-logout">
-                            <i data-lucide="log-out" width="18" height="18"></i> Sair
-                        </button>
-                    </form>
+                        @if(auth()->user()->username === 'admin')
+                            <a href="{{ route('users.index') }}" role="menuitem">
+                                <i data-lucide="users" width="16" height="16"></i> Usuários
+                            </a>
+                        @endif
+                        <form action="{{ route('logout') }}" method="POST" role="none">
+                            @csrf
+                            <button type="submit" class="header-dropdown-item" role="menuitem">
+                                <i data-lucide="log-out" width="18" height="18"></i> Sair
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -423,6 +501,27 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/pt.js"></script>
     <script>document.addEventListener('DOMContentLoaded', function() { lucide.createIcons(); });</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var hamburger = document.getElementById('headerHamburger');
+            var dropdown = document.getElementById('headerDropdown');
+            if (!hamburger || !dropdown) return;
+            function closeMenu() {
+                dropdown.classList.remove('open');
+                hamburger.setAttribute('aria-expanded', 'false');
+            }
+            function toggleMenu() {
+                var isOpen = dropdown.classList.toggle('open');
+                hamburger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            }
+            hamburger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleMenu();
+            });
+            document.addEventListener('click', function() { closeMenu(); });
+            dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+        });
+    </script>
     
     @if(session('success'))
     <script>
