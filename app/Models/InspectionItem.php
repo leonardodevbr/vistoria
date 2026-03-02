@@ -18,11 +18,20 @@ class InspectionItem extends Model
         'funcionamento',
         'observacoes',
         'foto',
-        'is_draft'
+        'is_draft',
+        'ip_address',
+        'user_agent',
+        'latitude',
+        'longitude',
+        'geolocation_accuracy',
+        'device_info',
     ];
 
     protected $casts = [
         'is_draft' => 'boolean',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'geolocation_accuracy' => 'float',
     ];
 
     public function inspection(): BelongsTo

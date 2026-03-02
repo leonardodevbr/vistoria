@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Administrador',
             'username' => 'admin',
             'email' => 'admin@vistoria.local',
-            'password' => \Illuminate\Support\Facades\Hash::make('admin'),
+            'password' => \Illuminate\Support\Facades\Hash::make(env('ADMIN_PASSWORD')),
         ]);
     }
 }

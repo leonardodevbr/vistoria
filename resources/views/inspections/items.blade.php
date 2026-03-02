@@ -649,6 +649,32 @@ document.getElementById('cameraInput').addEventListener('change', function(e) {
 var draftSaveTimeout = null;
 var DRAFT_SAVE_DELAY = 1000;
 
+function getGeolocation() {
+    return new Promise(function(resolve) {
+        if (!navigator.geolocation) { resolve(null); return; }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                resolve({
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy != null ? pos.coords.accuracy : null
+                });
+            },
+            function() { resolve(null); },
+            { timeout: 8000, maximumAge: 60000, enableHighAccuracy: true }
+        );
+    });
+}
+
+async function appendGeolocationToFormData(formData) {
+    var coords = await getGeolocation();
+    if (coords) {
+        formData.append('latitude', coords.latitude);
+        formData.append('longitude', coords.longitude);
+        if (coords.accuracy != null) formData.append('geolocation_accuracy', coords.accuracy);
+    }
+}
+
 function showAddItemAutosaveStatus(msg, isError) {
     var el = document.getElementById('addItemAutosaveStatus');
     if (!el) return;
@@ -945,6 +971,7 @@ document.getElementById('itemForm').addEventListener('submit', async function(e)
             formData.set('estado_fisico', (this.elements['estado_fisico'] && this.elements['estado_fisico'].value) || 'Não se aplica');
             formData.set('funcionamento', (this.elements['funcionamento'] && this.elements['funcionamento'].value) || 'Não se aplica');
             selectedPhotos.forEach(function(file) { formData.append('fotos[]', file); });
+            await appendGeolocationToFormData(formData);
             var response = await fetch('{{ url("/inspections/items") }}/' + currentDraftItemId, {
                 method: 'POST',
                 body: formData,
@@ -958,6 +985,7 @@ document.getElementById('itemForm').addEventListener('submit', async function(e)
         } else {
             var formData = new FormData(this);
             selectedPhotos.forEach(function(file) { formData.append('fotos[]', file); });
+            await appendGeolocationToFormData(formData);
             var response = await fetch('{{ route("inspections.items.store", $inspection) }}', {
                 method: 'POST',
                 body: formData,
@@ -1112,6 +1140,7 @@ document.getElementById('editItemForm').addEventListener('submit', async functio
         formData.append('remove_legacy_foto', '1');
     }
     editSelectedPhotos.forEach(function(file) { formData.append('fotos[]', file); });
+    await appendGeolocationToFormData(formData);
     var saveBtn = document.getElementById('btnSaveEditItem');
     var originalHtml = saveBtn.innerHTML;
     saveBtn.disabled = true;

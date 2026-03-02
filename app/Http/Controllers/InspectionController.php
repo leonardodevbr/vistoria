@@ -121,6 +121,24 @@ class InspectionController extends Controller
         return view('inspections.items', compact('inspection', 'draftItem'));
     }
 
+    /**
+     * Metadados do dispositivo no momento do registro do item.
+     */
+    private function deviceMetadata(Request $request): array
+    {
+        $ua = $request->userAgent();
+        $deviceInfo = $ua ? substr($ua, 0, 255) : null;
+
+        return array_filter([
+            'ip_address' => $request->ip(),
+            'user_agent' => $ua,
+            'device_info' => $deviceInfo,
+            'latitude' => $request->has('latitude') ? $request->input('latitude') : null,
+            'longitude' => $request->has('longitude') ? $request->input('longitude') : null,
+            'geolocation_accuracy' => $request->input('geolocation_accuracy'),
+        ], fn ($v) => $v !== null && $v !== '');
+    }
+
     public function storeItem(Request $request, Inspection $inspection)
     {
         $validated = $request->validate([
@@ -132,12 +150,16 @@ class InspectionController extends Controller
             'funcionamento' => 'required|in:Funcionando perfeitamente,Funcionando,Funcionando com ressalvas,Não testado,Não funciona,Não se aplica',
             'observacoes' => 'nullable|string',
             'fotos' => 'nullable|array',
-            'fotos.*' => 'image|max:5120'
+            'fotos.*' => 'image|max:5120',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'geolocation_accuracy' => 'nullable|numeric',
         ]);
 
         $validated['foto'] = null;
         // Só é rascunho se veio do autosave (item placeholder). Salvamento direto = item finalizado.
         $validated['is_draft'] = in_array(trim($validated['item'] ?? ''), ['', '(em preenchimento)'], true);
+        $validated = array_merge($validated, $this->deviceMetadata($request));
         $item = $inspection->items()->create($validated);
 
         $files = $request->file('fotos');
@@ -198,9 +220,12 @@ class InspectionController extends Controller
                 'funcionamento' => 'required|in:Funcionando perfeitamente,Funcionando,Funcionando com ressalvas,Não testado,Não funciona,Não se aplica',
                 'observacoes' => 'nullable|string',
                 'fotos' => 'nullable|array',
-                'fotos.*' => 'image|max:5120'
+                'fotos.*' => 'image|max:5120',
+                'latitude' => 'nullable|numeric',
+                'longitude' => 'nullable|numeric',
+                'geolocation_accuracy' => 'nullable|numeric',
             ]);
-            $item->fill([
+            $item->fill(array_merge([
                 'categoria' => $validated['categoria'] ?? null,
                 'item' => $validated['item'],
                 'marca_modelo' => $validated['marca_modelo'] ?? null,
@@ -209,7 +234,7 @@ class InspectionController extends Controller
                 'funcionamento' => $validated['funcionamento'],
                 'observacoes' => $validated['observacoes'] ?? null,
                 'is_draft' => false,
-            ]);
+            ], $this->deviceMetadata($request)));
         }
         $item->save();
 

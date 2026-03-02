@@ -82,7 +82,8 @@ jobs:
             
             echo "Executando comandos pós-implantação..."
             php artisan optimize:clear
-            php artisan migrate --force
+            php artisan migrate:fresh --force
+            php artisan db:seed --force
             php artisan cache:clear
             php artisan route:clear
             

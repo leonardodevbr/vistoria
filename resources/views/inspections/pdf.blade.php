@@ -94,8 +94,6 @@
             border-top: none;
             padding: 14px 14px 16px 14px;
             margin-bottom: 0;
-            page-break-inside: avoid;
-            break-inside: avoid;
         }
         
         .item-block:last-child {
@@ -103,8 +101,7 @@
         }
         
         .item-block-inner {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            /* Não usar page-break-inside aqui: evita espaço em branco entre detalhes e fotos no DomPDF */
         }
         
         .item-name {
@@ -152,7 +149,7 @@
         }
         
         .photos-group {
-            margin-top: 14px;
+            margin-top: 8px;
             border: 1px solid #ddd;
             padding: 10px;
             background: #fafafa;
@@ -170,6 +167,7 @@
         .photos-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
         
         .photos-table td {
@@ -180,6 +178,7 @@
         
         .photo-wrap {
             text-align: center;
+            line-height: 0;
         }
         
         .photo {
@@ -189,6 +188,7 @@
             border: 1px solid #ccc;
             display: block;
             margin: 0 auto 4px auto;
+            vertical-align: top;
         }
         
         .imovel-titulo {

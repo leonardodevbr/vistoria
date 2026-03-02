@@ -30,6 +30,12 @@ return new class extends Migration
             $table->text('observacoes')->nullable();
             $table->string('foto')->nullable();
             $table->boolean('is_draft')->default(false);
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
+            $table->float('geolocation_accuracy')->nullable();
+            $table->string('device_info', 255)->nullable();
             $table->timestamps();
         });
     }
