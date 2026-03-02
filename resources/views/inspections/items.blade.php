@@ -877,18 +877,36 @@ var cameraActionsPreview = document.getElementById('cameraActionsPreview');
 
 function showCameraPreview(file) {
     pendingCaptureFile = file;
-    var url = URL.createObjectURL(file);
-    cameraPreviewImg.src = url;
     cameraLiveWrap.classList.remove('visible');
     cameraPreviewWrap.classList.add('visible');
     if (cameraActionsLive) cameraActionsLive.style.display = 'none';
     if (cameraActionsPreview) cameraActionsPreview.style.display = 'flex';
+    function showPreviewWithUrl(url) {
+        if (cameraPreviewImg.src && cameraPreviewImg.src.indexOf('blob:') === 0) URL.revokeObjectURL(cameraPreviewImg.src);
+        cameraPreviewImg.src = url;
+        cameraPreviewImg.onload = function() {
+            cameraPreviewImg.onload = null;
+            cameraPreviewImg.style.visibility = 'visible';
+        };
+        cameraPreviewImg.style.visibility = 'hidden';
+    }
+    var blobUrl = URL.createObjectURL(file);
+    var reader = new FileReader();
+    reader.onload = function() {
+        showPreviewWithUrl(reader.result);
+        URL.revokeObjectURL(blobUrl);
+    };
+    reader.onerror = function() {
+        showPreviewWithUrl(blobUrl);
+    };
+    reader.readAsDataURL(file);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function backToCameraLive() {
-    if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
+    if (cameraPreviewImg.src && cameraPreviewImg.src.indexOf('blob:') === 0) URL.revokeObjectURL(cameraPreviewImg.src);
     cameraPreviewImg.removeAttribute('src');
+    cameraPreviewImg.style.visibility = '';
     cameraPreviewWrap.classList.remove('visible');
     cameraLiveWrap.classList.add('visible');
     if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
@@ -908,8 +926,9 @@ function closeCameraModal() {
         }
         pendingCaptureFile = null;
     }
-    if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
+    if (cameraPreviewImg.src && cameraPreviewImg.src.indexOf('blob:') === 0) URL.revokeObjectURL(cameraPreviewImg.src);
     cameraPreviewImg.removeAttribute('src');
+    cameraPreviewImg.style.visibility = '';
     cameraPreviewWrap.classList.remove('visible');
     cameraLiveWrap.classList.add('visible');
     if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
@@ -936,8 +955,9 @@ function startCameraModal() {
     if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
     if (cameraActionsLive) cameraActionsLive.style.display = 'flex';
     pendingCaptureFile = null;
-    if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
+    if (cameraPreviewImg.src && cameraPreviewImg.src.indexOf('blob:') === 0) URL.revokeObjectURL(cameraPreviewImg.src);
     cameraPreviewImg.removeAttribute('src');
+    cameraPreviewImg.style.visibility = '';
 
     var constraintsList = [
         { video: { facingMode: 'environment', width: { max: 1280 }, height: { max: 720 } }, audio: false },
