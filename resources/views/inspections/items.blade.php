@@ -1284,14 +1284,17 @@ document.getElementById('editItemForm').addEventListener('submit', async functio
     if (!editingItemId) return;
     var formData = new FormData(this);
     formData.delete('keep_photo_ids[]');
+    formData.delete('keep_photo_ids');
     formData.delete('remove_legacy_foto');
+    var keptIds = [];
     if (editExistingPhotos && editExistingPhotos.length) {
         editExistingPhotos.forEach(function(p) {
             if (p && p.id !== null && typeof p.id !== 'undefined') {
-                formData.append('keep_photo_ids[]', String(p.id));
+                keptIds.push(Number(p.id));
             }
         });
     }
+    formData.append('keep_photo_ids', JSON.stringify(keptIds));
     if (editLegacyRemoved) {
         formData.append('remove_legacy_foto', '1');
     }

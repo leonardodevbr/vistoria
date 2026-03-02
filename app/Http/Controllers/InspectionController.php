@@ -273,8 +273,13 @@ class InspectionController extends Controller
 
                 $keepIds = [];
                 if ($request->has('keep_photo_ids')) {
-                    $keepIdsRaw = $request->input('keep_photo_ids', []);
-                    $keepIds = array_values(array_unique(array_filter(array_map('intval', (array) $keepIdsRaw))));
+                    $keepIdsRaw = $request->input('keep_photo_ids');
+                    if (is_string($keepIdsRaw)) {
+                        $decoded = json_decode($keepIdsRaw, true);
+                        $keepIds = is_array($decoded) ? array_values(array_unique(array_filter(array_map('intval', $decoded)))) : [];
+                    } else {
+                        $keepIds = array_values(array_unique(array_filter(array_map('intval', (array) $keepIdsRaw))));
+                    }
                 }
 
                 foreach ($item->photos as $photo) {
