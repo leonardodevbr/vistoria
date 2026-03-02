@@ -38,7 +38,8 @@
             <div class="input-group-cep">
                 <input type="text" name="cep" id="cep" class="input-group-cep-input" 
                        value="{{ old('cep', $inspection->cep_formatado) }}" 
-                       placeholder="00000-000" maxlength="9" autocomplete="off">
+                       placeholder="00000-000" maxlength="9" autocomplete="postal-code"
+                       inputmode="numeric" pattern="[0-9\-]*">
                 <button type="button" id="btnBuscarCep" class="input-group-cep-btn">Buscar</button>
             </div>
             <span id="cepStatus" class="field-hint"></span>

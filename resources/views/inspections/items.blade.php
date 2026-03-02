@@ -169,20 +169,22 @@
         </div>
         <div id="cameraModal" class="camera-modal" style="display: none;">
             <div class="camera-modal-content">
-                <div id="cameraLoading" class="camera-loading">Abrindo câmera...</div>
-                <div id="cameraLiveWrap" class="camera-live-wrap">
-                    <video id="cameraVideo" autoplay playsinline muted></video>
-                    <div class="camera-modal-actions">
-                        <button type="button" id="btnCapture" class="btn btn-success" disabled>Capturar</button>
-                        <button type="button" id="btnCloseCamera" class="btn btn-primary">Fechar</button>
+                <div id="cameraViewport" class="camera-viewport">
+                    <div id="cameraLoading" class="camera-loading">Abrindo câmera...</div>
+                    <div id="cameraLiveWrap" class="camera-live-wrap">
+                        <video id="cameraVideo" autoplay playsinline muted></video>
+                    </div>
+                    <div id="cameraPreviewWrap" class="camera-preview-wrap" style="display: none;">
+                        <img id="cameraPreviewImg" src="" alt="Preview da foto">
                     </div>
                 </div>
-                <div id="cameraPreviewWrap" class="camera-preview-wrap" style="display: none;">
-                    <img id="cameraPreviewImg" src="" alt="Preview da foto">
-                    <div class="camera-modal-actions">
-                        <button type="button" id="btnAddMorePhoto" class="btn btn-primary btn-icon"><i data-lucide="plus-circle" width="18" height="18"></i> Adicionar mais</button>
-                        <button type="button" id="btnUsePhotos" class="btn btn-success btn-icon"><i data-lucide="check" width="18" height="18"></i> Concluir</button>
-                    </div>
+                <div id="cameraActionsLive" class="camera-modal-actions">
+                    <button type="button" id="btnCapture" class="btn btn-success" disabled>Capturar</button>
+                    <button type="button" id="btnCloseCamera" class="btn btn-primary">Fechar</button>
+                </div>
+                <div id="cameraActionsPreview" class="camera-modal-actions" style="display: none;">
+                    <button type="button" id="btnAddMorePhoto" class="btn btn-primary btn-icon"><i data-lucide="plus-circle" width="18" height="18"></i> Adicionar mais</button>
+                    <button type="button" id="btnUsePhotos" class="btn btn-success btn-icon"><i data-lucide="check" width="18" height="18"></i> Concluir</button>
                 </div>
             </div>
         </div>
@@ -465,13 +467,14 @@
 .photo-remove { position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border: none; border-radius: 50%; background: #f45c43; color: white; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; }
 .camera-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .camera-modal-content { background: #1a1a1a; border-radius: 12px; overflow: hidden; max-width: 100%; min-width: 280px; position: relative; }
-.camera-live-wrap { display: flex; flex-direction: column; }
-.camera-preview-wrap { display: flex; flex-direction: column; }
-.camera-modal-content video,
-.camera-preview-wrap img { display: block; width: 100%; min-width: 280px; min-height: 210px; max-height: 70vh; object-fit: cover; background: #000; }
-.camera-preview-wrap img { object-fit: contain; }
-.camera-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; padding: 1rem; text-align: center; z-index: 2; }
-.camera-modal-content video.ready ~ .camera-loading { display: none; }
+.camera-viewport { width: 100%; min-width: 280px; aspect-ratio: 4/3; max-height: 70vh; background: #000; position: relative; flex-shrink: 0; }
+.camera-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; padding: 1rem; text-align: center; z-index: 2; }
+.camera-live-wrap { position: absolute; inset: 0; display: none; }
+.camera-live-wrap.visible { display: block; }
+.camera-live-wrap video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
+.camera-preview-wrap { position: absolute; inset: 0; display: none; flex-direction: column; }
+.camera-preview-wrap.visible { display: flex; }
+.camera-preview-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
 .camera-modal-actions { display: flex; gap: 0.5rem; padding: 1rem; justify-content: center; flex-wrap: wrap; }
 .item-card { position: relative; padding-top: 3rem; }
 .item-card-actions { position: absolute; top: 0.5rem; right: 0.5rem; left: auto; display: flex; flex-direction: row; align-items: center; gap: 0.5rem; z-index: 2; flex-wrap: nowrap; }
@@ -733,20 +736,27 @@ function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
 }
 
+var cameraActionsLive = document.getElementById('cameraActionsLive');
+var cameraActionsPreview = document.getElementById('cameraActionsPreview');
+
 function showCameraPreview(file) {
     pendingCaptureFile = file;
     var url = URL.createObjectURL(file);
     cameraPreviewImg.src = url;
-    cameraLiveWrap.style.display = 'none';
-    cameraPreviewWrap.style.display = 'flex';
+    cameraLiveWrap.classList.remove('visible');
+    cameraPreviewWrap.classList.add('visible');
+    if (cameraActionsLive) cameraActionsLive.style.display = 'none';
+    if (cameraActionsPreview) cameraActionsPreview.style.display = 'flex';
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function backToCameraLive() {
     if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
     cameraPreviewImg.removeAttribute('src');
-    cameraPreviewWrap.style.display = 'none';
-    cameraLiveWrap.style.display = 'flex';
+    cameraPreviewWrap.classList.remove('visible');
+    cameraLiveWrap.classList.add('visible');
+    if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
+    if (cameraActionsLive) cameraActionsLive.style.display = 'flex';
     pendingCaptureFile = null;
 }
 
@@ -764,8 +774,10 @@ function closeCameraModal() {
     }
     if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
     cameraPreviewImg.removeAttribute('src');
-    cameraPreviewWrap.style.display = 'none';
-    cameraLiveWrap.style.display = 'flex';
+    cameraPreviewWrap.classList.remove('visible');
+    cameraLiveWrap.classList.add('visible');
+    if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
+    if (cameraActionsLive) cameraActionsLive.style.display = 'flex';
     if (cameraStream) {
         cameraStream.getTracks().forEach(function(t) { t.stop(); });
     }
@@ -779,12 +791,14 @@ function closeCameraModal() {
 function startCameraModal() {
     cameraModal.style.display = 'flex';
     cameraLoading.textContent = 'Abrindo câmera...';
-    cameraLoading.style.display = 'block';
+    cameraLoading.style.display = 'flex';
     btnCapture.disabled = true;
     cameraVideo.classList.remove('ready');
     cameraVideo.style.display = 'none';
-    cameraLiveWrap.style.display = 'flex';
-    cameraPreviewWrap.style.display = 'none';
+    cameraLiveWrap.classList.remove('visible');
+    cameraPreviewWrap.classList.remove('visible');
+    if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
+    if (cameraActionsLive) cameraActionsLive.style.display = 'flex';
     pendingCaptureFile = null;
     if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
     cameraPreviewImg.removeAttribute('src');
@@ -830,6 +844,7 @@ function startCameraModal() {
                 cameraVideo.onloadeddata = function() {
                     cameraVideo.classList.add('ready');
                     cameraLoading.style.display = 'none';
+                    cameraLiveWrap.classList.add('visible');
                     btnCapture.disabled = false;
                 };
                 cameraVideo.onerror = function() { tryNext(index + 1); };
