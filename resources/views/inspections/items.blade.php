@@ -465,9 +465,9 @@
 .photo-preview-item { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
 .photo-preview-thumb { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
 .photo-remove { position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border: none; border-radius: 50%; background: #f45c43; color: white; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; }
-.camera-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-.camera-modal-content { background: #1a1a1a; border-radius: 12px; overflow: hidden; max-width: 100%; min-width: 280px; position: relative; }
-.camera-viewport { width: 100%; min-width: 280px; aspect-ratio: 4/3; max-height: 70vh; background: #000; position: relative; flex-shrink: 0; }
+.camera-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: stretch; justify-content: center; padding: 0; }
+.camera-modal-content { background: #000; overflow: hidden; width: 100%; max-width: 100%; min-height: 100%; display: flex; flex-direction: column; position: relative; }
+.camera-viewport { width: 100%; flex: 1; min-height: 60vh; max-height: calc(100vh - 80px); background: #000; position: relative; flex-shrink: 0; }
 .camera-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; padding: 1rem; text-align: center; z-index: 2; }
 .camera-live-wrap { position: absolute; inset: 0; display: none; }
 .camera-live-wrap.visible { display: block; }
@@ -804,6 +804,8 @@ function startCameraModal() {
     cameraPreviewImg.removeAttribute('src');
 
     var constraintsList = [
+        { video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+        { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
         { video: { facingMode: 'environment' }, audio: false },
         { video: { facingMode: 'user' }, audio: false },
         { video: true }
@@ -880,7 +882,7 @@ document.getElementById('btnCapture').addEventListener('click', function() {
     canvas.toBlob(function(blob) {
         var file = new File([blob], 'captura-' + Date.now() + '.jpg', { type: 'image/jpeg' });
         showCameraPreview(file);
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', 1);
 });
 
 document.getElementById('btnAddMorePhoto').addEventListener('click', function() {

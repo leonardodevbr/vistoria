@@ -77,6 +77,7 @@
         .category-block {
             margin: 24px 0;
             page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         .category-heading {
@@ -94,10 +95,16 @@
             padding: 14px 14px 16px 14px;
             margin-bottom: 0;
             page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         .item-block:last-child {
             margin-bottom: 0;
+        }
+        
+        .item-block-inner {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         .item-name {
@@ -149,6 +156,8 @@
             border: 1px solid #ddd;
             padding: 10px;
             background: #fafafa;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         .photos-group-title {
@@ -325,41 +334,43 @@
                 
                 @foreach($items as $item)
                     <div class="item-block">
-                        <div class="item-name">{{ $item->item }}</div>
-                        
-                        <table class="item-dados">
-                            @if($item->marca_modelo)
-                            <tr><td>Marca/Modelo</td><td>{{ $item->marca_modelo }}</td></tr>
+                        <div class="item-block-inner">
+                            <div class="item-name">{!! html_entity_decode($item->item, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}</div>
+                            
+                            <table class="item-dados">
+                                @if($item->marca_modelo)
+                                <tr><td>Marca/Modelo</td><td>{!! html_entity_decode($item->marca_modelo, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}</td></tr>
+                                @endif
+                                <tr><td>Estado físico</td><td>{{ $item->estado_fisico }}</td></tr>
+                                <tr><td>Funcionamento</td><td>{{ $item->funcionamento }}</td></tr>
+                            </table>
+                            
+                            @if($item->observacoes)
+                            <div class="observacoes-box">
+                                <strong>Observações:</strong><br>
+                                {!! html_entity_decode($item->observacoes, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}
+                            </div>
                             @endif
-                            <tr><td>Estado físico</td><td>{{ $item->estado_fisico }}</td></tr>
-                            <tr><td>Funcionamento</td><td>{{ $item->funcionamento }}</td></tr>
-                        </table>
-                        
-                        @if($item->observacoes)
-                        <div class="observacoes-box">
-                            <strong>Observações:</strong><br>
-                            {{ $item->observacoes }}
+                            
+                            @php $photos = $item->allPhotos(); @endphp
+                            @if($photos->isNotEmpty())
+                            <div class="photos-group">
+                                <div class="photos-group-title">Fotos ({{ $photos->count() }})</div>
+                                <table class="photos-table"><tr>
+                                    @foreach($photos as $idx => $photoPath)
+                                        @if($idx > 0 && $idx % 3 === 0)
+                                        </tr><tr>
+                                        @endif
+                                        <td><div class="photo-wrap"><img src="{{ public_path('storage/' . $photoPath) }}" class="photo" alt="Foto"></div></td>
+                                    @endforeach
+                                    @php $rest = (3 - ($photos->count() % 3)) % 3; @endphp
+                                    @for($i = 0; $i < $rest; $i++)
+                                        <td></td>
+                                    @endfor
+                                </tr></table>
+                            </div>
+                            @endif
                         </div>
-                        @endif
-                        
-                        @php $photos = $item->allPhotos(); @endphp
-                        @if($photos->isNotEmpty())
-                        <div class="photos-group">
-                            <div class="photos-group-title">Fotos ({{ $photos->count() }})</div>
-                            <table class="photos-table"><tr>
-                                @foreach($photos as $idx => $photoPath)
-                                    @if($idx > 0 && $idx % 3 === 0)
-                                    </tr><tr>
-                                    @endif
-                                    <td><div class="photo-wrap"><img src="{{ public_path('storage/' . $photoPath) }}" class="photo" alt="Foto"></div></td>
-                                @endforeach
-                                @php $rest = (3 - ($photos->count() % 3)) % 3; @endphp
-                                @for($i = 0; $i < $rest; $i++)
-                                    <td></td>
-                                @endfor
-                            </tr></table>
-                        </div>
-                        @endif
                     </div>
                 @endforeach
             </div>
