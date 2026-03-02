@@ -867,13 +867,30 @@ function startCameraModal() {
         navigator.mediaDevices.getUserMedia(constraintsList[index])
             .then(function(stream) {
                 cameraStream = stream;
+                cameraVideo.setAttribute('playsinline', '');
+                cameraVideo.setAttribute('webkit-playsinline', '');
                 cameraVideo.srcObject = stream;
                 cameraVideo.style.display = 'block';
                 cameraVideo.onloadeddata = function() {
-                    cameraVideo.classList.add('ready');
-                    cameraLoading.style.display = 'none';
-                    cameraLiveWrap.classList.add('visible');
-                    btnCapture.disabled = false;
+                    var p = cameraVideo.play();
+                    if (p && typeof p.then === 'function') {
+                        p.then(function() {
+                            cameraVideo.classList.add('ready');
+                            cameraLoading.style.display = 'none';
+                            cameraLiveWrap.classList.add('visible');
+                            btnCapture.disabled = false;
+                        }).catch(function() {
+                            cameraVideo.classList.add('ready');
+                            cameraLoading.style.display = 'none';
+                            cameraLiveWrap.classList.add('visible');
+                            btnCapture.disabled = false;
+                        });
+                    } else {
+                        cameraVideo.classList.add('ready');
+                        cameraLoading.style.display = 'none';
+                        cameraLiveWrap.classList.add('visible');
+                        btnCapture.disabled = false;
+                    }
                 };
                 cameraVideo.onerror = function() { tryNext(index + 1); };
             })
@@ -901,14 +918,27 @@ document.getElementById('btnCloseCamera').addEventListener('click', function() {
 
 document.getElementById('btnCapture').addEventListener('click', function() {
     if (!cameraVideo.videoWidth || !cameraVideo.videoHeight) return;
-    var canvas = document.createElement('canvas');
-    canvas.width = cameraVideo.videoWidth;
-    canvas.height = cameraVideo.videoHeight;
-    canvas.getContext('2d').drawImage(cameraVideo, 0, 0);
-    canvas.toBlob(function(blob) {
-        var file = new File([blob], 'captura-' + Date.now() + '.jpg', { type: 'image/jpeg' });
-        showCameraPreview(file);
-    }, 'image/jpeg', 1);
+    var video = cameraVideo;
+    function doCapture() {
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
+        canvas.toBlob(function(blob) {
+            if (!blob) return;
+            var file = new File([blob], 'captura-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+            showCameraPreview(file);
+        }, 'image/jpeg', 1);
+    }
+    if (video.readyState >= 2) {
+        requestAnimationFrame(doCapture);
+    } else {
+        video.addEventListener('canplay', function onCanPlay() {
+            video.removeEventListener('canplay', onCanPlay);
+            setTimeout(function() { requestAnimationFrame(doCapture); }, 150);
+        }, { once: true });
+    }
 });
 
 document.getElementById('btnAddMorePhoto').addEventListener('click', function() {
