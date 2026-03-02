@@ -21,11 +21,17 @@
             Para validar o laudo da vistoria, o sistema precisa de acesso à <strong>localização do dispositivo</strong> e à <strong>câmera</strong>. Esses dados compõem o laudo e garantem a autenticidade da vistoria perante o locatário.
         </p>
         <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.25rem;">
-            Está faltando pelo menos uma permissão. Ative a localização e a câmera nas configurações do navegador ou do aparelho e volte para continuar.
+            Está faltando pelo menos uma permissão. Clique em &quot;Dar permissão&quot; para que o navegador solicite o acesso.
         </p>
-        <a href="{{ route('inspections.index') }}" class="btn btn-primary btn-icon">
-            <i data-lucide="arrow-left" width="18" height="18"></i> Voltar ao início
-        </a>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+            <button type="button" id="btnGrantPermission" class="btn btn-success btn-icon">
+                <i data-lucide="check-circle" width="18" height="18"></i> Dar permissão
+            </button>
+            <a href="{{ route('inspections.index') }}" class="btn btn-outline btn-icon">
+                <i data-lucide="arrow-left" width="18" height="18"></i> Voltar ao início
+            </a>
+        </div>
+        <p id="permissionsModalStatus" style="font-size: 0.85rem; color: #666; margin-top: 0.75rem; margin-bottom: 0;"></p>
     </div>
 </div>
 
@@ -696,14 +702,73 @@ async function appendGeolocationToFormData(formData) {
 
 (function checkPermissionsAndShowModalIfNeeded() {
     var modal = document.getElementById('permissionsModal');
+    var statusEl = document.getElementById('permissionsModalStatus');
     if (!modal) return;
     function showModal() {
         modal.style.display = 'flex';
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
+    function hideModal() {
+        modal.style.display = 'none';
+    }
+    function setStatus(text) {
+        if (statusEl) statusEl.textContent = text;
+    }
     function permissionStateNotGranted(state) {
         return state && state !== 'granted';
     }
+    function recheckAndHideIfGranted() {
+        var q = navigator.permissions && navigator.permissions.query;
+        if (!q) { hideModal(); return; }
+        Promise.all([
+            navigator.permissions.query({ name: 'geolocation' }).then(function(p) { return p.state; }).catch(function() { return 'granted'; }),
+            navigator.permissions.query({ name: 'camera' }).then(function(p) { return p.state; }).catch(function() { return 'granted'; })
+        ]).then(function(results) {
+            if (!permissionStateNotGranted(results[0]) && !permissionStateNotGranted(results[1])) {
+                setStatus('');
+                hideModal();
+            }
+        }).catch(function() {});
+    }
+    function requestPermissions() {
+        var btn = document.getElementById('btnGrantPermission');
+        if (btn) { btn.disabled = true; }
+        setStatus('Solicitando... O navegador pode pedir localização e câmera.');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        function doCamera() {
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                setStatus('Câmera não disponível neste navegador.');
+                if (btn) btn.disabled = false;
+                recheckAndHideIfGranted();
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then(function(stream) {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                    setStatus('Permissões solicitadas. Verificando...');
+                    if (btn) btn.disabled = false;
+                    recheckAndHideIfGranted();
+                })
+                .catch(function() {
+                    setStatus('Câmera negada ou indisponível. Ative nas configurações se quiser usar.');
+                    if (btn) btn.disabled = false;
+                    recheckAndHideIfGranted();
+                });
+        }
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function() { doCamera(); },
+                function() {
+                    setStatus('Localização negada. Solicitando câmera...');
+                    doCamera();
+                },
+                { timeout: 15000, maximumAge: 0 }
+            );
+        } else {
+            doCamera();
+        }
+    }
+    document.getElementById('btnGrantPermission') && document.getElementById('btnGrantPermission').addEventListener('click', requestPermissions);
     Promise.all([
         typeof navigator.permissions !== 'undefined' && navigator.permissions.query
             ? navigator.permissions.query({ name: 'geolocation' }).then(function(p) { return p.state; }).catch(function() { return 'granted'; })
