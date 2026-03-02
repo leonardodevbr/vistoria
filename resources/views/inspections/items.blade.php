@@ -877,29 +877,8 @@ var cameraActionsPreview = document.getElementById('cameraActionsPreview');
 
 function showCameraPreview(file) {
     pendingCaptureFile = file;
-    cameraLiveWrap.classList.remove('visible');
-    cameraPreviewWrap.classList.add('visible');
     if (cameraActionsLive) cameraActionsLive.style.display = 'none';
     if (cameraActionsPreview) cameraActionsPreview.style.display = 'flex';
-    function showPreviewWithUrl(url) {
-        if (cameraPreviewImg.src && cameraPreviewImg.src.indexOf('blob:') === 0) URL.revokeObjectURL(cameraPreviewImg.src);
-        cameraPreviewImg.src = url;
-        cameraPreviewImg.onload = function() {
-            cameraPreviewImg.onload = null;
-            cameraPreviewImg.style.visibility = 'visible';
-        };
-        cameraPreviewImg.style.visibility = 'hidden';
-    }
-    var blobUrl = URL.createObjectURL(file);
-    var reader = new FileReader();
-    reader.onload = function() {
-        showPreviewWithUrl(reader.result);
-        URL.revokeObjectURL(blobUrl);
-    };
-    reader.onerror = function() {
-        showPreviewWithUrl(blobUrl);
-    };
-    reader.readAsDataURL(file);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -912,6 +891,9 @@ function backToCameraLive() {
     if (cameraActionsPreview) cameraActionsPreview.style.display = 'none';
     if (cameraActionsLive) cameraActionsLive.style.display = 'flex';
     pendingCaptureFile = null;
+    if (cameraVideo && cameraStream) {
+        cameraVideo.play().catch(function() {});
+    }
 }
 
 function closeCameraModal() {
@@ -941,6 +923,7 @@ function closeCameraModal() {
     cameraVideo.style.display = 'none';
     cameraVideo.classList.remove('ready');
     cameraModal.style.display = 'none';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function startCameraModal() {
@@ -1052,6 +1035,7 @@ var CAPTURE_JPEG_QUALITY = 0.82;
 document.getElementById('btnCapture').addEventListener('click', function() {
     if (!cameraVideo.videoWidth || !cameraVideo.videoHeight) return;
     var video = cameraVideo;
+    video.pause();
     function doCapture() {
         var w = video.videoWidth;
         var h = video.videoHeight;
@@ -1072,19 +1056,9 @@ document.getElementById('btnCapture').addEventListener('click', function() {
             showCameraPreview(file);
         }, 'image/jpeg', CAPTURE_JPEG_QUALITY);
     }
-    function scheduleCapture() {
-        requestAnimationFrame(function() {
-            requestAnimationFrame(doCapture);
-        });
-    }
-    if (video.readyState >= 2) {
-        scheduleCapture();
-    } else {
-        video.addEventListener('canplay', function onCanPlay() {
-            video.removeEventListener('canplay', onCanPlay);
-            setTimeout(scheduleCapture, 200);
-        }, { once: true });
-    }
+    requestAnimationFrame(function() {
+        requestAnimationFrame(doCapture);
+    });
 });
 
 document.getElementById('btnAddMorePhoto').addEventListener('click', function() {
