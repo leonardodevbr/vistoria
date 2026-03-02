@@ -13,6 +13,22 @@
     @endif
 </div>
 
+<div id="permissionsBanner" class="card permissions-banner" style="border-left: 4px solid #2563eb;">
+    <h3 class="icon-wrap" style="margin-bottom: 0.5rem;"><i data-lucide="shield-check" width="20" height="20"></i> Permissões necessárias</h3>
+    <p style="color: #444; font-size: 0.95rem; margin-bottom: 1rem; line-height: 1.5;">
+        Para validar o laudo da vistoria, o sistema precisa registrar a <strong>localização do dispositivo</strong> e usar a <strong>câmera</strong> ao tirar fotos dos itens. Esses dados compõem o laudo e garantem a autenticidade da vistoria perante o locatário.
+    </p>
+    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+        Clique no botão abaixo para autorizar. O navegador poderá solicitar o acesso à localização e à câmera.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+        <button type="button" id="btnRequestPermissions" class="btn btn-primary btn-icon">
+            <i data-lucide="check-circle" width="18" height="18"></i> Autorizar localização e câmera
+        </button>
+        <span id="permissionsBannerStatus" style="font-size: 0.9rem; color: #666;"></span>
+    </div>
+</div>
+
 <div class="card">
     <h3 class="icon-wrap" style="margin-bottom: 1rem;"><i data-lucide="layout-grid" width="20" height="20"></i> Adicionar itens por ambiente</h3>
     <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Selecione o ambiente e adicione todos os itens desse ambiente. Depois altere o ambiente para cadastrar itens de outro cômodo.</p>
@@ -674,6 +690,50 @@ async function appendGeolocationToFormData(formData) {
         if (coords.accuracy != null) formData.append('geolocation_accuracy', coords.accuracy);
     }
 }
+
+(function setupPermissionsBanner() {
+    var btn = document.getElementById('btnRequestPermissions');
+    var statusEl = document.getElementById('permissionsBannerStatus');
+    if (!btn || !statusEl) return;
+    btn.addEventListener('click', function() {
+        statusEl.textContent = 'Solicitando permissões...';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        function requestCamera() {
+            if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                statusEl.textContent = (statusEl.textContent || '').replace('Solicitando permissões...', '') + (statusEl.textContent ? ' ' : '') + 'Câmera: não disponível neste navegador.';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then(function(stream) {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                    statusEl.textContent = statusEl.textContent.replace('Solicitando permissões...', '').trim();
+                    statusEl.textContent = (statusEl.textContent ? statusEl.textContent + ' ' : '') + 'Câmera autorizada. Permissões concluídas.';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                })
+                .catch(function() {
+                    statusEl.textContent = (statusEl.textContent ? statusEl.textContent + ' ' : '') + 'Câmera negada. Você pode ativar nas configurações do navegador.';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+        }
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function() {
+                    statusEl.textContent = 'Localização autorizada. ';
+                    requestCamera();
+                },
+                function() {
+                    statusEl.textContent = 'Localização negada. Ative nas configurações do navegador se quiser registrar a localização nos itens. ';
+                    requestCamera();
+                },
+                { timeout: 15000, maximumAge: 0 }
+            );
+        } else {
+            statusEl.textContent = 'Localização não disponível. ';
+            requestCamera();
+        }
+    });
+})();
 
 function showAddItemAutosaveStatus(msg, isError) {
     var el = document.getElementById('addItemAutosaveStatus');
