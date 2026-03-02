@@ -136,7 +136,8 @@ class InspectionController extends Controller
         ]);
 
         $validated['foto'] = null;
-        $validated['is_draft'] = ($validated['item'] === '(em preenchimento)');
+        // Só é rascunho se veio do autosave (item placeholder). Salvamento direto = item finalizado.
+        $validated['is_draft'] = in_array(trim($validated['item'] ?? ''), ['', '(em preenchimento)'], true);
         $item = $inspection->items()->create($validated);
 
         $files = $request->file('fotos');
@@ -187,6 +188,7 @@ class InspectionController extends Controller
                 'is_draft' => true,
             ]);
         } else {
+            // Salvamento manual (botão Adicionar item / Salvar alterações): sempre marcar como item finalizado
             $validated = $request->validate([
                 'categoria' => 'nullable|string',
                 'item' => 'required|string',
@@ -206,19 +208,74 @@ class InspectionController extends Controller
                 'estado_fisico' => $validated['estado_fisico'],
                 'funcionamento' => $validated['funcionamento'],
                 'observacoes' => $validated['observacoes'] ?? null,
-                'is_draft' => $validated['item'] === '(em preenchimento)',
+                'is_draft' => false,
             ]);
         }
         $item->save();
 
         $files = $request->file('fotos');
-        if ($files) {
-            foreach ($files as $index => $file) {
-                $path = $file->store('fotos', 'public');
-                $item->photos()->create(['path' => $path]);
-                if (!$item->foto) {
-                    $item->update(['foto' => $path]);
+        if ($isAutosave) {
+            // No autosave, se vierem fotos, substituímos o conjunto para evitar duplicação.
+            if ($files !== null) {
+                $item->load('photos');
+                foreach ($item->photos as $photo) {
+                    Storage::disk('public')->delete($photo->path);
                 }
+                $item->photos()->delete();
+                $item->update(['foto' => null]);
+
+                $firstPath = null;
+                foreach ($files as $file) {
+                    $path = $file->store('fotos', 'public');
+                    $item->photos()->create(['path' => $path]);
+                    if ($firstPath === null) {
+                        $firstPath = $path;
+                    }
+                }
+                if ($firstPath) {
+                    $item->update(['foto' => $firstPath]);
+                }
+            }
+        } else {
+            // Em edição manual, permite manter/remover fotos existentes e adicionar novas.
+            $shouldUpdatePhotos =
+                $request->has('keep_photo_ids') ||
+                $request->has('remove_legacy_foto') ||
+                ($files !== null);
+
+            if ($shouldUpdatePhotos) {
+                $item->load('photos');
+
+                $keepIds = [];
+                if ($request->has('keep_photo_ids')) {
+                    $keepIdsRaw = $request->input('keep_photo_ids', []);
+                    $keepIds = array_values(array_unique(array_filter(array_map('intval', (array) $keepIdsRaw))));
+                }
+
+                foreach ($item->photos as $photo) {
+                    if (!in_array((int) $photo->id, $keepIds, true)) {
+                        Storage::disk('public')->delete($photo->path);
+                        $photo->delete();
+                    }
+                }
+
+                $removeLegacy = $request->boolean('remove_legacy_foto');
+                $hasOnlyLegacyFoto = $item->photos()->count() === 0;
+                if ($removeLegacy && $hasOnlyLegacyFoto && $item->foto) {
+                    Storage::disk('public')->delete($item->foto);
+                    $item->foto = null;
+                    $item->save();
+                }
+
+                if ($files) {
+                    foreach ($files as $file) {
+                        $path = $file->store('fotos', 'public');
+                        $item->photos()->create(['path' => $path]);
+                    }
+                }
+
+                $firstPath = $item->photos()->orderBy('id')->value('path');
+                $item->update(['foto' => $firstPath ?: null]);
             }
         }
 

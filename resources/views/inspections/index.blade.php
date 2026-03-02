@@ -20,7 +20,7 @@
 @else
     @foreach($inspections as $inspection)
         <div class="card">
-            <h3 style="color: #667eea; margin-bottom: 0.5rem;">
+            <h3 style="color: #1e40af; margin-bottom: 0.5rem;">
                 Vistoria #{{ $inspection->id }}
             </h3>
             
@@ -45,9 +45,10 @@
                 <i data-lucide="calendar" width="14" height="14"></i> <strong>Data:</strong> {{ $inspection->data_vistoria->format('d/m/Y H:i') }}
             </p>
             
+            @php $itensCadastrados = $inspection->items->filter(fn($i) => $i->is_draft !== true); @endphp
             <div style="margin-bottom: 1rem;">
                 <span class="badge badge-info">
-                    {{ $inspection->items->count() }} {{ $inspection->items->count() == 1 ? 'item' : 'itens' }}
+                    {{ $itensCadastrados->count() }} {{ $itensCadastrados->count() == 1 ? 'item' : 'itens' }}
                 </span>
             </div>
             
@@ -59,7 +60,7 @@
                     <i data-lucide="list" width="16" height="16"></i> Itens
                 </a>
                 
-                @if($inspection->items->count() > 0)
+                @if($itensCadastrados->count() > 0)
                     <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-success btn-sm btn-icon">
                         <i data-lucide="file-down" width="16" height="16"></i> Gerar PDF
                     </a>
@@ -82,7 +83,7 @@ function deleteInspection(id) {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#f45c43',
-        cancelButtonColor: '#667eea',
+        cancelButtonColor: '#2563eb',
         confirmButtonText: 'Sim, excluir!',
         cancelButtonText: 'Cancelar'
     }).then((result) => {

@@ -170,10 +170,19 @@
         <div id="cameraModal" class="camera-modal" style="display: none;">
             <div class="camera-modal-content">
                 <div id="cameraLoading" class="camera-loading">Abrindo câmera...</div>
-                <video id="cameraVideo" autoplay playsinline muted></video>
-                <div class="camera-modal-actions">
-                    <button type="button" id="btnCapture" class="btn btn-success" disabled>Capturar</button>
-                    <button type="button" id="btnCloseCamera" class="btn btn-primary">Fechar</button>
+                <div id="cameraLiveWrap" class="camera-live-wrap">
+                    <video id="cameraVideo" autoplay playsinline muted></video>
+                    <div class="camera-modal-actions">
+                        <button type="button" id="btnCapture" class="btn btn-success" disabled>Capturar</button>
+                        <button type="button" id="btnCloseCamera" class="btn btn-primary">Fechar</button>
+                    </div>
+                </div>
+                <div id="cameraPreviewWrap" class="camera-preview-wrap" style="display: none;">
+                    <img id="cameraPreviewImg" src="" alt="Preview da foto">
+                    <div class="camera-modal-actions">
+                        <button type="button" id="btnAddMorePhoto" class="btn btn-primary btn-icon"><i data-lucide="plus-circle" width="18" height="18"></i> Adicionar mais</button>
+                        <button type="button" id="btnUsePhotos" class="btn btn-success btn-icon"><i data-lucide="check" width="18" height="18"></i> Concluir</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,13 +197,13 @@
 </div>
 
 <div id="itemsList">
-    @php $itemsListados = $inspection->items->where('is_draft', false); @endphp
+    @php $itemsListados = $inspection->items->filter(fn($i) => $i->is_draft !== true); @endphp
     @if($itemsListados->count() > 0)
         <div class="card">
             <h3 class="icon-wrap" style="margin-bottom: 1rem;"><i data-lucide="list-checks" width="20" height="20"></i> Itens cadastrados ({{ $itemsListados->count() }})</h3>
             
             @foreach($itemsListados->groupBy('localizacao') as $localizacao => $items)
-                <h4 style="color: #667eea; margin-top: 1.5rem; margin-bottom: 1rem;">
+                <h4 style="color: #1e40af; margin-top: 1.5rem; margin-bottom: 1rem;">
                     {{ $localizacao ?: 'Sem localização' }}
                 </h4>
                 
@@ -207,7 +216,9 @@
                          data-localizacao="{{ e($item->localizacao) }}"
                          data-estado-fisico="{{ e($item->estado_fisico) }}"
                          data-funcionamento="{{ e($item->funcionamento) }}"
-                         data-observacoes="{{ e($item->observacoes) }}">
+                         data-observacoes="{{ e($item->observacoes) }}"
+                         data-photos='@json($item->photos->map(fn($p) => ["id" => $p->id, "path" => $p->path, "url" => asset("storage/" . $p->path)])->values())'
+                         data-legacy-foto="{{ $item->photos->count() === 0 ? e($item->foto) : '' }}">
                         <div class="item-card-actions">
                             <button type="button" class="edit-btn" onclick="openEditItem(this)" title="Editar">
                                 <i data-lucide="pencil" width="14" height="14"></i>
@@ -408,8 +419,10 @@
             <div class="form-group">
                 <label class="form-label">Adicionar mais fotos (opcional)</label>
                 <input type="file" id="editFotosInput" accept="image/*" multiple style="display: none;">
+                <input type="file" id="editCameraInput" accept="image/*" capture="environment" style="display: none;">
                 <div class="foto-actions">
                     <button type="button" id="editBtnGaleria" class="btn btn-outline btn-sm btn-icon"><i data-lucide="image" width="16" height="16"></i> Galeria</button>
+                    <button type="button" id="editBtnCamera" class="btn btn-outline btn-sm btn-icon"><i data-lucide="camera" width="16" height="16"></i> Câmera</button>
                 </div>
                 <div id="editPhotoPreviewList" class="photo-preview-list"></div>
             </div>
@@ -443,7 +456,7 @@
 .ts-wrapper.single .ts-control { background: #fff; }
 .ts-wrapper { border: none !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; }
 .ts-wrapper .ts-control { border: 2px solid #e0e0e0 !important; border-radius: 8px !important; min-height: 42px; }
-.ts-wrapper .ts-control:focus-within { border-color: #667eea !important; outline: none !important; }
+.ts-wrapper .ts-control:focus-within { border-color: #2563eb !important; outline: none !important; }
 .ts-dropdown { margin-top: 6px !important; border-radius: 8px !important; box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; z-index: 10050 !important; }
 .foto-actions { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
 .photo-preview-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
@@ -452,7 +465,11 @@
 .photo-remove { position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border: none; border-radius: 50%; background: #f45c43; color: white; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; }
 .camera-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .camera-modal-content { background: #1a1a1a; border-radius: 12px; overflow: hidden; max-width: 100%; min-width: 280px; position: relative; }
-.camera-modal-content video { display: block; width: 100%; min-width: 280px; min-height: 210px; max-height: 70vh; object-fit: cover; background: #000; }
+.camera-live-wrap { display: flex; flex-direction: column; }
+.camera-preview-wrap { display: flex; flex-direction: column; }
+.camera-modal-content video,
+.camera-preview-wrap img { display: block; width: 100%; min-width: 280px; min-height: 210px; max-height: 70vh; object-fit: cover; background: #000; }
+.camera-preview-wrap img { object-fit: contain; }
 .camera-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; padding: 1rem; text-align: center; z-index: 2; }
 .camera-modal-content video.ready ~ .camera-loading { display: none; }
 .camera-modal-actions { display: flex; gap: 0.5rem; padding: 1rem; justify-content: center; flex-wrap: wrap; }
@@ -460,7 +477,7 @@
 .item-card-actions { position: absolute; top: 0.5rem; right: 0.5rem; left: auto; display: flex; flex-direction: row; align-items: center; gap: 0.5rem; z-index: 2; flex-wrap: nowrap; }
 .item-card-actions .edit-btn,
 .item-card-actions .delete-btn { position: static !important; width: 34px; height: 34px; min-width: 34px; min-height: 34px; border: none; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; }
-.item-card-actions .edit-btn { background: #667eea; color: white; }
+.item-card-actions .edit-btn { background: #2563eb; color: white; }
 .item-card-actions .edit-btn:hover { opacity: 0.9; }
 .item-card-actions .edit-btn svg { width: 16px; height: 16px; }
 .item-card-actions .delete-btn { background: #f45c43; color: white; font-size: 1.25rem; line-height: 1; }
@@ -494,7 +511,7 @@
 .carousel-viewport-clickable .carousel-slide.active { pointer-events: auto; }
 .carousel-slide img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 .carousel-controls { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem; background: #fff; border-top: 1px solid #e2e8f0; flex-wrap: wrap; }
-.carousel-btn { width: 36px; height: 36px; border: none; border-radius: 8px; background: #667eea; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.carousel-btn { width: 36px; height: 36px; border: none; border-radius: 8px; background: #2563eb; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
 .carousel-btn:hover { background: #5a67d8; }
 .carousel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .carousel-counter { font-size: 0.9rem; font-weight: 600; color: #475569; min-width: 3.5rem; text-align: center; }
@@ -705,10 +722,58 @@ var cameraStream = null;
 var cameraVideo = document.getElementById('cameraVideo');
 var cameraModal = document.getElementById('cameraModal');
 var cameraLoading = document.getElementById('cameraLoading');
+var cameraLiveWrap = document.getElementById('cameraLiveWrap');
+var cameraPreviewWrap = document.getElementById('cameraPreviewWrap');
+var cameraPreviewImg = document.getElementById('cameraPreviewImg');
 var btnCapture = document.getElementById('btnCapture');
+var pendingCaptureFile = null;
+var cameraTarget = 'add';
 
 function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+}
+
+function showCameraPreview(file) {
+    pendingCaptureFile = file;
+    var url = URL.createObjectURL(file);
+    cameraPreviewImg.src = url;
+    cameraLiveWrap.style.display = 'none';
+    cameraPreviewWrap.style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function backToCameraLive() {
+    if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
+    cameraPreviewImg.removeAttribute('src');
+    cameraPreviewWrap.style.display = 'none';
+    cameraLiveWrap.style.display = 'flex';
+    pendingCaptureFile = null;
+}
+
+function closeCameraModal() {
+    if (pendingCaptureFile) {
+        if (cameraTarget === 'edit') {
+            editSelectedPhotos.push(pendingCaptureFile);
+            renderEditPreviews();
+        } else {
+            selectedPhotos.push(pendingCaptureFile);
+            renderPreviews();
+            scheduleDraftSave();
+        }
+        pendingCaptureFile = null;
+    }
+    if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
+    cameraPreviewImg.removeAttribute('src');
+    cameraPreviewWrap.style.display = 'none';
+    cameraLiveWrap.style.display = 'flex';
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(function(t) { t.stop(); });
+    }
+    cameraStream = null;
+    cameraVideo.srcObject = null;
+    cameraVideo.style.display = 'none';
+    cameraVideo.classList.remove('ready');
+    cameraModal.style.display = 'none';
 }
 
 function startCameraModal() {
@@ -718,6 +783,11 @@ function startCameraModal() {
     btnCapture.disabled = true;
     cameraVideo.classList.remove('ready');
     cameraVideo.style.display = 'none';
+    cameraLiveWrap.style.display = 'flex';
+    cameraPreviewWrap.style.display = 'none';
+    pendingCaptureFile = null;
+    if (cameraPreviewImg.src) URL.revokeObjectURL(cameraPreviewImg.src);
+    cameraPreviewImg.removeAttribute('src');
 
     var constraintsList = [
         { video: { facingMode: 'environment' }, audio: false },
@@ -729,7 +799,27 @@ function startCameraModal() {
         if (index >= constraintsList.length) {
             cameraLoading.textContent = '';
             cameraModal.style.display = 'none';
-            Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível acessar a câmera. Verifique as permissões ou use o botão Galeria.' });
+            if (isMobileDevice()) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Câmera',
+                    text: 'Não foi possível abrir a câmera no navegador. Use a câmera do sistema ou a galeria.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Câmera do sistema',
+                    cancelButtonText: 'Galeria',
+                    confirmButtonColor: '#2563eb'
+                }).then(function(r) {
+                    if (cameraTarget === 'edit') {
+                        if (r.isConfirmed) document.getElementById('editCameraInput').click();
+                        else document.getElementById('editFotosInput').click();
+                    } else {
+                        if (r.isConfirmed) document.getElementById('cameraInput').click();
+                        else document.getElementById('fotosInput').click();
+                    }
+                });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível acessar a câmera. Verifique as permissões ou use o botão Galeria.' });
+            }
             return;
         }
         navigator.mediaDevices.getUserMedia(constraintsList[index])
@@ -749,23 +839,21 @@ function startCameraModal() {
     tryNext(0);
 }
 
-document.getElementById('btnCamera').addEventListener('click', function() {
-    if (isMobileDevice()) {
+function openCameraForAdd() {
+    cameraTarget = 'add';
+    if (typeof navigator.mediaDevices !== 'undefined' && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        startCameraModal();
+    } else if (isMobileDevice()) {
         document.getElementById('cameraInput').click();
     } else {
-        startCameraModal();
+        Swal.fire({ icon: 'error', title: 'Erro', text: 'Câmera não disponível. Use o botão Galeria.' });
     }
-});
+}
+
+document.getElementById('btnCamera').addEventListener('click', openCameraForAdd);
 
 document.getElementById('btnCloseCamera').addEventListener('click', function() {
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(function(t) { t.stop(); });
-    }
-    cameraStream = null;
-    cameraVideo.srcObject = null;
-    cameraVideo.style.display = 'none';
-    cameraVideo.classList.remove('ready');
-    cameraModal.style.display = 'none';
+    closeCameraModal();
 });
 
 document.getElementById('btnCapture').addEventListener('click', function() {
@@ -776,10 +864,28 @@ document.getElementById('btnCapture').addEventListener('click', function() {
     canvas.getContext('2d').drawImage(cameraVideo, 0, 0);
     canvas.toBlob(function(blob) {
         var file = new File([blob], 'captura-' + Date.now() + '.jpg', { type: 'image/jpeg' });
-        selectedPhotos.push(file);
-        renderPreviews();
-        scheduleDraftSave();
+        showCameraPreview(file);
     }, 'image/jpeg', 0.9);
+});
+
+document.getElementById('btnAddMorePhoto').addEventListener('click', function() {
+    if (pendingCaptureFile) {
+        if (cameraTarget === 'edit') {
+            editSelectedPhotos.push(pendingCaptureFile);
+            renderEditPreviews();
+        } else {
+            selectedPhotos.push(pendingCaptureFile);
+            renderPreviews();
+            scheduleDraftSave();
+        }
+    }
+    backToCameraLive();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+});
+
+document.getElementById('btnUsePhotos').addEventListener('click', function() {
+    closeCameraModal();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 });
 
 document.getElementById('itemForm').addEventListener('submit', async function(e) {
@@ -830,7 +936,7 @@ document.getElementById('itemForm').addEventListener('submit', async function(e)
             var data = await response.json().catch(function() { return {}; });
             if (response.ok && data.success) {
                 try { sessionStorage.setItem('vistoria_ambiente_{{ $inspection->id }}', ambiente || ''); } catch (err) {}
-                Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Item salvo.', confirmButtonColor: '#667eea' }).then(function() { window.location.reload(); });
+                Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Item salvo.', confirmButtonColor: '#2563eb' }).then(function() { window.location.reload(); });
             } else throw new Error(data.message || 'Erro ao salvar');
         } else {
             var formData = new FormData(this);
@@ -843,7 +949,7 @@ document.getElementById('itemForm').addEventListener('submit', async function(e)
             var data = await response.json().catch(function() { return {}; });
             if (response.ok && data.success) {
                 try { sessionStorage.setItem('vistoria_ambiente_{{ $inspection->id }}', ambiente || ''); } catch (err) {}
-                Swal.fire({ icon: 'success', title: 'Sucesso!', text: data.message, confirmButtonColor: '#667eea' }).then(function() { window.location.reload(); });
+                Swal.fire({ icon: 'success', title: 'Sucesso!', text: data.message, confirmButtonColor: '#2563eb' }).then(function() { window.location.reload(); });
             } else {
                 var msg = (data.errors ? Object.values(data.errors).flat().join('\n') : null) || data.message || 'Erro ao adicionar item';
                 throw new Error(msg);
@@ -858,6 +964,9 @@ document.getElementById('itemForm').addEventListener('submit', async function(e)
 
 var editingItemId = null;
 var editSelectedPhotos = [];
+var editExistingPhotos = [];
+var editLegacyRemoved = false;
+var storageBaseUrl = "{{ asset('storage') }}";
 
 function openEditItem(btn) {
     var card = btn.closest('.item-card');
@@ -873,8 +982,15 @@ function openEditItem(btn) {
     editFuncionamentoSelect.setValue(card.dataset.funcionamento || '');
     document.getElementById('editObservacoes').value = card.dataset.observacoes || '';
     editSelectedPhotos = [];
-    var editList = document.getElementById('editPhotoPreviewList');
-    editList.innerHTML = '';
+    editExistingPhotos = [];
+    editLegacyRemoved = false;
+    try {
+        editExistingPhotos = JSON.parse(card.dataset.photos || '[]') || [];
+    } catch (e) { editExistingPhotos = []; }
+    if ((!editExistingPhotos || editExistingPhotos.length === 0) && card.dataset.legacyFoto) {
+        editExistingPhotos = [{ id: null, path: card.dataset.legacyFoto, url: storageBaseUrl + '/' + card.dataset.legacyFoto, legacy: true }];
+    }
+    renderEditPreviews();
     var statusEl = document.getElementById('editAutosaveStatus');
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'edit-autosave-status'; }
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -884,6 +1000,8 @@ function closeEditItem() {
     document.getElementById('editItemModal').style.display = 'none';
     editingItemId = null;
     editSelectedPhotos = [];
+    editExistingPhotos = [];
+    editLegacyRemoved = false;
 }
 
 function addEditPhotoPreview(file, index) {
@@ -892,12 +1010,12 @@ function addEditPhotoPreview(file, index) {
         var div = document.createElement('div');
         div.className = 'photo-preview-item';
         div.dataset.index = index;
+        div.dataset.type = 'new';
         div.innerHTML = '<img src="' + ev.target.result + '" alt="Preview" class="photo-preview-thumb"><button type="button" class="photo-remove" data-index="' + index + '">×</button>';
         document.getElementById('editPhotoPreviewList').appendChild(div);
         div.querySelector('.photo-remove').addEventListener('click', function() {
             editSelectedPhotos.splice(parseInt(this.dataset.index), 1);
             renderEditPreviews();
-            if (typeof scheduleEditAutosave === 'function') scheduleEditAutosave();
         });
     };
     reader.readAsDataURL(file);
@@ -906,6 +1024,24 @@ function addEditPhotoPreview(file, index) {
 function renderEditPreviews() {
     var list = document.getElementById('editPhotoPreviewList');
     list.innerHTML = '';
+    if (editExistingPhotos && editExistingPhotos.length) {
+        editExistingPhotos.forEach(function(photo, i) {
+            var div = document.createElement('div');
+            div.className = 'photo-preview-item';
+            div.dataset.index = i;
+            div.dataset.type = 'existing';
+            div.innerHTML = '<img src="' + photo.url + '" alt="Foto" class="photo-preview-thumb"><button type="button" class="photo-remove" data-index="' + i + '" data-type="existing">×</button>';
+            list.appendChild(div);
+            div.querySelector('.photo-remove').addEventListener('click', function() {
+                var idx = parseInt(this.dataset.index, 10);
+                var removed = editExistingPhotos.splice(idx, 1)[0];
+                if (removed && (removed.id === null || removed.legacy)) {
+                    editLegacyRemoved = true;
+                }
+                renderEditPreviews();
+            });
+        });
+    }
     editSelectedPhotos.forEach(function(file, i) { addEditPhotoPreview(file, i); });
 }
 
@@ -913,12 +1049,31 @@ document.getElementById('editBtnGaleria').addEventListener('click', function() {
     document.getElementById('editFotosInput').click();
 });
 
+document.getElementById('editBtnCamera').addEventListener('click', function() {
+    cameraTarget = 'edit';
+    if (typeof navigator.mediaDevices !== 'undefined' && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        startCameraModal();
+    } else if (isMobileDevice()) {
+        document.getElementById('editCameraInput').click();
+    } else {
+        Swal.fire({ icon: 'error', title: 'Erro', text: 'Câmera não disponível. Use o botão Galeria.' });
+    }
+});
+
+document.getElementById('editCameraInput').addEventListener('change', function(e) {
+    var files = e.target.files;
+    if (files && files.length) {
+        for (var i = 0; i < files.length; i++) editSelectedPhotos.push(files[i]);
+        renderEditPreviews();
+    }
+    this.value = '';
+});
+
 document.getElementById('editFotosInput').addEventListener('change', function(e) {
     var files = e.target.files;
     if (files && files.length) {
         for (var i = 0; i < files.length; i++) editSelectedPhotos.push(files[i]);
         renderEditPreviews();
-        scheduleEditAutosave();
     }
     this.value = '';
 });
@@ -927,6 +1082,18 @@ document.getElementById('editItemForm').addEventListener('submit', async functio
     e.preventDefault();
     if (!editingItemId) return;
     var formData = new FormData(this);
+    formData.delete('keep_photo_ids[]');
+    formData.delete('remove_legacy_foto');
+    if (editExistingPhotos && editExistingPhotos.length) {
+        editExistingPhotos.forEach(function(p) {
+            if (p && p.id !== null && typeof p.id !== 'undefined') {
+                formData.append('keep_photo_ids[]', String(p.id));
+            }
+        });
+    }
+    if (editLegacyRemoved) {
+        formData.append('remove_legacy_foto', '1');
+    }
     editSelectedPhotos.forEach(function(file) { formData.append('fotos[]', file); });
     var saveBtn = document.getElementById('btnSaveEditItem');
     var originalHtml = saveBtn.innerHTML;
@@ -942,7 +1109,7 @@ document.getElementById('editItemForm').addEventListener('submit', async functio
         var data = await response.json().catch(function() { return {}; });
         if (response.ok && data.success) {
             closeEditItem();
-            Swal.fire({ icon: 'success', title: 'Salvo!', text: data.message, confirmButtonColor: '#667eea' }).then(function() {
+            Swal.fire({ icon: 'success', title: 'Salvo!', text: data.message, confirmButtonColor: '#2563eb' }).then(function() {
                 window.location.reload();
             });
         } else {
@@ -973,13 +1140,12 @@ async function saveEditItemAutosave() {
     editAutosaveInProgress = true;
     var form = document.getElementById('editItemForm');
     var formData = new FormData(form);
-    editSelectedPhotos.forEach(function(file) { formData.append('fotos[]', file); });
     var updateUrl = '{{ url("/inspections/items") }}/' + editingItemId;
     try {
         var response = await fetch(updateUrl, {
             method: 'POST',
             body: formData,
-            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json' }
+            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 'Accept': 'application/json', 'X-Autosave': '1' }
         });
         var data = await response.json().catch(function() { return {}; });
         if (response.ok && data.success) showEditAutosaveStatus('Salvo');
@@ -1008,7 +1174,7 @@ async function deleteItem(id) {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#f45c43',
-        cancelButtonColor: '#667eea',
+        cancelButtonColor: '#2563eb',
         confirmButtonText: 'Sim, remover!',
         cancelButtonText: 'Cancelar'
     });
@@ -1032,7 +1198,7 @@ async function deleteItem(id) {
                     text: data.message,
                     showConfirmButton: true,
                     confirmButtonText: 'Ok',
-                    confirmButtonColor: '#667eea'
+                    confirmButtonColor: '#2563eb'
                 }).then(function() {
                     window.location.reload();
                 });

@@ -25,7 +25,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             min-height: 100vh;
             min-height: 100dvh;
             display: flex;
@@ -93,7 +93,7 @@
         
         .form-control:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #2563eb;
         }
         
         .btn {
@@ -104,14 +104,14 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: white;
             transition: transform 0.3s, box-shadow 0.3s;
         }
         
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
         }
         
         .btn:active {

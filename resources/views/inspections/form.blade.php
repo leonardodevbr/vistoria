@@ -137,10 +137,10 @@
     .input-group-cep-input { flex: 1; min-width: 0; width: auto; }
 }
 .input-group-cep { display: flex; align-items: stretch; border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; transition: border-color 0.3s; }
-.input-group-cep:focus-within { border-color: #667eea; outline: none; }
+.input-group-cep:focus-within { border-color: #2563eb; outline: none; }
 .input-group-cep-input { flex: 1; min-width: 0; width: 7rem; padding: 0.75rem 0.75rem; font-size: 1rem; border: none; background: #fff; }
 .input-group-cep-input:focus { outline: none; }
-.input-group-cep-btn { flex-shrink: 0; padding: 0 0.875rem; font-size: 0.85rem; font-weight: 600; border: none; border-left: 2px solid #e0e0e0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; white-space: nowrap; }
+.input-group-cep-btn { flex-shrink: 0; padding: 0 0.875rem; font-size: 0.85rem; font-weight: 600; border: none; border-left: 2px solid #e0e0e0; background: #2563eb; color: white; cursor: pointer; white-space: nowrap; }
 .input-group-cep-btn:hover { opacity: 0.95; }
 .input-group-cep-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 .field-hint { font-size: 0.8rem; color: #666; margin-top: 0.25rem; display: block; }
@@ -251,7 +251,7 @@ document.getElementById('inspectionForm').addEventListener('submit', function(e)
             icon: 'warning',
             title: 'Campo obrigatório',
             text: 'Informe o imóvel vistoriado (ex: Apto 101, Casa 2).',
-            confirmButtonColor: '#667eea'
+            confirmButtonColor: '#2563eb'
         });
         document.getElementById('endereco').focus();
         return;
@@ -262,7 +262,7 @@ document.getElementById('inspectionForm').addEventListener('submit', function(e)
             icon: 'warning',
             title: 'Campo obrigatório',
             text: 'Informe o responsável pela vistoria.',
-            confirmButtonColor: '#667eea'
+            confirmButtonColor: '#2563eb'
         });
         document.getElementById('responsavel').focus();
         return;
@@ -273,7 +273,7 @@ document.getElementById('inspectionForm').addEventListener('submit', function(e)
             icon: 'warning',
             title: 'Campo obrigatório',
             text: 'Informe a data e hora da vistoria.',
-            confirmButtonColor: '#667eea'
+            confirmButtonColor: '#2563eb'
         });
         document.getElementById('data_vistoria').focus();
         return;

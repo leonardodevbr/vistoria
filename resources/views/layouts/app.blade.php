@@ -75,13 +75,14 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2563eb;
             color: white;
         }
         
         .btn-primary:hover {
+            background: #1d4ed8;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
         }
         
         .btn-success {
@@ -129,7 +130,7 @@
         
         .form-control:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #2563eb;
         }
         
         textarea.form-control {
@@ -164,7 +165,7 @@
         }
         
         .item-card h4 {
-            color: #667eea;
+            color: #1e40af;
             margin-bottom: 0.5rem;
         }
         
@@ -225,12 +226,12 @@
             display: block;
             padding: 0.75rem;
             background: #f8f9fa;
-            border: 2px dashed #667eea;
+            border: 2px dashed #2563eb;
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            color: #667eea;
+            color: #2563eb;
             font-weight: 600;
         }
         
@@ -260,7 +261,7 @@
         }
         
         .ts-control:focus {
-            border-color: #667eea !important;
+            border-color: #2563eb !important;
         }
         
         .loading {
@@ -275,7 +276,7 @@
         
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #2563eb;
             border-radius: 50%;
             width: 40px;
             height: 40px;
