@@ -1380,17 +1380,26 @@ async function deleteItem(id) {
     
     if (result.isConfirmed) {
         try {
-            const response = await fetch(`/inspections/items/${id}`, {
-                method: 'DELETE',
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const url = "{{ route('inspections.items.delete', ['item' => '__ID__']) }}".replace('__ID__', id);
+            const response = await fetch(url, {
+                method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: '_method=DELETE'
             });
-            
-            const data = await response.json();
-            
-            if (data.success) {
+
+            let data = null;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            }
+
+            if (response.ok && data && data.success) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Removido!',
@@ -1400,6 +1409,13 @@ async function deleteItem(id) {
                     confirmButtonColor: '#2563eb'
                 }).then(function() {
                     window.location.reload();
+                });
+            } else {
+                const message = (data && data.message) ? data.message : (data && data.errors ? Object.values(data.errors).flat().join(' ') : 'Não foi possível remover o item.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro!',
+                    text: message
                 });
             }
         } catch (error) {
