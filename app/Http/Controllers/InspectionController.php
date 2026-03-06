@@ -8,6 +8,7 @@ use App\Models\InspectionItem;
 use App\Models\InspectionItemPhoto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class InspectionController extends Controller
@@ -375,7 +376,12 @@ class InspectionController extends Controller
             'assinaturaHash' => $assinaturaHash,
         ]);
 
-        return $pdf->download('vistoria-' . $inspection->id . '.pdf');
+        $slug = $inspection->endereco
+            ? Str::slug(Str::limit(trim($inspection->endereco), 80, ''))
+            : '';
+        $filename = ($slug !== '' ? 'vistoria-' . $slug : 'vistoria-' . $inspection->id) . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     /** Lado máximo (px) para imagens no PDF; proporção mantida. */

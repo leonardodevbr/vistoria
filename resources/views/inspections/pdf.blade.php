@@ -12,7 +12,7 @@
             font-size: 11pt;
             line-height: 1.5;
             color: #1a1a1a;
-            padding: 40px 35px;
+            padding: 30px 28px;
         }
         
         .doc-title {
@@ -279,23 +279,21 @@
         }
 
         .photo-container {
-            height: 200px;
-            width: 100%;
+            min-height: 200px;
             border: 1px solid #ccc;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
             background: #f5f5f5;
             margin-bottom: 4px;
+            padding: 4px;
         }
         .photo-container img {
+            display: block;
+            margin: 0 auto;
             max-width: 100%;
-            max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain;
-            display: block;
+            max-height: 380px;
+            vertical-align: middle;
         }
         .photo-caption {
             font-size: 8pt;

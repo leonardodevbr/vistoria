@@ -111,6 +111,40 @@
             border-color: #94a3b8 !important;
             color: #334155 !important;
         }
+        .btn-outline-primary {
+            background: #fff !important;
+            color: #334155 !important;
+            border: 1px solid #334155 !important;
+        }
+        .btn-outline-primary:hover {
+            background: #f1f5f9 !important;
+            border-color: #334155 !important;
+            color: #1e293b !important;
+        }
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: stretch;
+        }
+        .card-actions .btn,
+        .card-actions form {
+            flex: 1 1 0;
+            min-width: 6.5rem;
+        }
+        .card-actions .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+        .card-actions form {
+            display: flex;
+            margin-bottom: 0;
+        }
+        .card-actions form .btn {
+            width: 100%;
+        }
         .btn-outline-success {
             background: #fff !important;
             color: #0f766e !important;

@@ -57,28 +57,28 @@
                 @endif
             </div>
             
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="card-actions">
                 @if(!$inspection->isAprovado())
-                    <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-primary btn-sm btn-icon">
+                    <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-outline-primary btn-sm btn-icon">
                         <i data-lucide="file-text" width="16" height="16"></i> Dados
                     </a>
-                    <a href="{{ route('inspections.items', $inspection) }}" class="btn btn-outline btn-sm btn-icon">
+                    <a href="{{ route('inspections.items', $inspection) }}" class="btn btn-outline-primary btn-sm btn-icon">
                         <i data-lucide="list" width="16" height="16"></i> Itens
                     </a>
                     @if($itensCadastrados->count() > 0)
-                        <form action="{{ route('inspections.approve', $inspection) }}" method="POST" style="display: inline;" onsubmit="return confirm('Ao aprovar, a vistoria ficará selada e não poderá mais ser alterada. Confirma?');">
+                        <form id="approveForm-{{ $inspection->id }}" action="{{ route('inspections.approve', $inspection) }}" method="POST" style="display: none;">
                             @csrf
-                            <button type="submit" class="btn btn-outline-success btn-sm btn-icon">
-                                <i data-lucide="check-circle" width="16" height="16"></i> Aprovar
-                            </button>
                         </form>
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-icon" onclick="approveInspection({{ $inspection->id }})">
+                            <i data-lucide="check-circle" width="16" height="16"></i> Aprovar
+                        </button>
                     @endif
-                    <button onclick="deleteInspection({{ $inspection->id }})" class="btn btn-outline-danger btn-sm btn-icon">
+                    <button type="button" onclick="deleteInspection({{ $inspection->id }})" class="btn btn-outline-danger btn-sm btn-icon">
                         <i data-lucide="trash-2" width="16" height="16"></i> Excluir
                     </button>
                 @endif
                 @if($itensCadastrados->count() > 0)
-                    <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-outline btn-sm btn-icon">
+                    <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-outline-primary btn-sm btn-icon">
                         <i data-lucide="file-down" width="16" height="16"></i> {{ $inspection->isAprovado() ? 'Baixar PDF' : 'Gerar PDF' }}
                     </a>
                 @endif
@@ -89,6 +89,23 @@
 
 @push('scripts')
 <script>
+function approveInspection(id) {
+    Swal.fire({
+        title: 'Tem certeza?',
+        html: 'Após a aprovação, <strong>não será possível alterar nada</strong> nesta vistoria. O PDF gerado ficará <strong>assinado digitalmente</strong> pelo sistema.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0f766e',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Sim, aprovar!',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('approveForm-' + id).submit();
+        }
+    });
+}
+
 function deleteInspection(id) {
     Swal.fire({
         title: 'Tem certeza?',

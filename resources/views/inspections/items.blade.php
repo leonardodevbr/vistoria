@@ -218,7 +218,7 @@
         
         <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
             <button type="submit" class="btn btn-success btn-icon" id="btnAddItem">
-                <i data-lucide="plus-circle" width="18" height="18"></i> Adicionar item
+                <i data-lucide="plus-circle" width="18" height="18"></i> Registrar
             </button>
             <span id="addItemAutosaveStatus" class="add-item-autosave-status" aria-live="polite"></span>
         </div>
