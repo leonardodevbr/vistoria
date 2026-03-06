@@ -42,7 +42,7 @@
             @endif
             
             <p style="margin-bottom: 1rem;" class="icon-wrap">
-                <i data-lucide="calendar" width="14" height="14"></i> <strong>Data:</strong> {{ $inspection->data_vistoria->format('d/m/Y H:i') }}
+                <i data-lucide="calendar" width="14" height="14"></i> <strong>Data:</strong> {{ $inspection->data_vistoria?->format('d/m/Y H:i') ?? '—' }}
             </p>
             
             @php $itensCadastrados = $inspection->items->filter(fn($i) => $i->is_draft !== true); @endphp
@@ -73,14 +73,20 @@
                             <i data-lucide="check-circle" width="16" height="16"></i> Aprovar
                         </button>
                     @endif
-                    <button type="button" onclick="deleteInspection({{ $inspection->id }})" class="btn btn-outline-danger btn-sm btn-icon">
+                    @if($itensCadastrados->count() > 0)
+                        <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-outline-primary btn-sm btn-icon">
+                            <i data-lucide="file-down" width="16" height="16"></i> Gerar PDF
+                        </a>
+                    @endif
+                    <button type="button" onclick="deleteInspection({{ $inspection->id }})" class="btn btn-outline-danger btn-sm btn-icon card-actions-excluir">
                         <i data-lucide="trash-2" width="16" height="16"></i> Excluir
                     </button>
-                @endif
-                @if($itensCadastrados->count() > 0)
-                    <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-outline-primary btn-sm btn-icon">
-                        <i data-lucide="file-down" width="16" height="16"></i> {{ $inspection->isAprovado() ? 'Baixar PDF' : 'Gerar PDF' }}
-                    </a>
+                @else
+                    @if($itensCadastrados->count() > 0)
+                        <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-outline-primary btn-sm btn-icon">
+                            <i data-lucide="file-down" width="16" height="16"></i> Baixar PDF
+                        </a>
+                    @endif
                 @endif
             </div>
         </div>

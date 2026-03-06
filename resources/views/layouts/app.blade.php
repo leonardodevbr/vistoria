@@ -145,6 +145,9 @@
         .card-actions form .btn {
             width: 100%;
         }
+        .card-actions .card-actions-excluir {
+            margin-left: 1rem;
+        }
         .btn-outline-success {
             background: #fff !important;
             color: #0f766e !important;
@@ -540,7 +543,7 @@
                         <a href="{{ route('profile.password') }}" role="menuitem">
                             <i data-lucide="lock" width="16" height="16"></i> Alterar senha
                         </a>
-                        @if(auth()->user()->username === 'admin')
+                        @if(auth()->user() && auth()->user()->username === 'admin')
                             <a href="{{ route('users.index') }}" role="menuitem">
                                 <i data-lucide="users" width="16" height="16"></i> Usuários
                             </a>
