@@ -378,9 +378,14 @@ class InspectionController extends Controller
         return $pdf->download('vistoria-' . $inspection->id . '.pdf');
     }
 
+    /** Lado máximo (px) para imagens no PDF; proporção mantida. */
+    private const PDF_IMAGE_MAX_SIDE = 1200;
+
+    /** Qualidade JPEG (1-100) para imagens redimensionadas no PDF. */
+    private const PDF_IMAGE_JPEG_QUALITY = 82;
+
     /**
-     * Monta fotos por item com path, orientação e hash para o PDF (sem alterar banco).
-     * Hash vinculado à vistoria + item + foto (id quando existe, senão path).
+     * Monta fotos por item com path (redimensionado para PDF), orientação e hash.
      * @return array<int, array{path: string, landscape: bool, hash: string, item_name: string}[]>
      */
     private function buildPhotosForPdf(Inspection $inspection): array
@@ -402,25 +407,92 @@ class InspectionController extends Controller
                 $path = $entry['path'];
                 $fullPath = Storage::disk('public')->path($path);
                 $landscape = true;
+                $pathForPdf = $path;
                 if (file_exists($fullPath) && @getimagesize($fullPath)) {
                     [$w, $h] = getimagesize($fullPath);
                     $landscape = $w >= $h;
+                    $pathForPdf = $this->resizeImageForPdf($fullPath, $path) ?: $path;
                 }
                 $hashInput = $inspection->id . '|' . $item->id . '|' . ($entry['photo_id'] ?? 'foto') . '|' . $path;
                 $hash = 'IMG-' . strtoupper(substr(hash('sha256', $hashInput), 0, 10));
 
                 $entries[] = [
-                    'path' => $path,
+                    'path' => $pathForPdf,
                     'landscape' => $landscape,
                     'hash' => $hash,
                     'item_name' => $item->item,
                 ];
             }
-            // Agrupa em linhas: 1 paisagem por linha ou 2 retratos por linha
             $byItem[$item->id] = $this->groupPhotoEntriesIntoRows($entries);
         }
 
         return $byItem;
+    }
+
+    /**
+     * Redimensiona imagem para o PDF (lado máximo 1200px, JPEG) e retorna path relativo ao storage/public.
+     * Usa cache em storage/app/public/pdf-cache para não reprocessar.
+     */
+    private function resizeImageForPdf(string $fullPath, string $originalRelativePath): ?string
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            return null;
+        }
+        $info = @getimagesize($fullPath);
+        if ($info === false || !isset($info[0], $info[1])) {
+            return null;
+        }
+        $w = (int) $info[0];
+        $h = (int) $info[1];
+        $max = self::PDF_IMAGE_MAX_SIDE;
+        if ($w <= $max && $h <= $max) {
+            $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg'], true) && ($info[2] ?? 0) === IMAGETYPE_JPEG) {
+                return null;
+            }
+        }
+        $cacheDir = Storage::disk('public')->path('pdf-cache');
+        if (!is_dir($cacheDir)) {
+            @mkdir($cacheDir, 0755, true);
+        }
+        $cacheKey = md5($fullPath . '@' . filemtime($fullPath));
+        $cacheRelative = 'pdf-cache/' . $cacheKey . '.jpg';
+        $cacheFull = Storage::disk('public')->path($cacheRelative);
+        if (file_exists($cacheFull)) {
+            return $cacheRelative;
+        }
+        $blob = @file_get_contents($fullPath);
+        if ($blob === false) {
+            return null;
+        }
+        $src = @imagecreatefromstring($blob);
+        if ($src === false) {
+            return null;
+        }
+        $newW = $w;
+        $newH = $h;
+        if ($w > $max || $h > $max) {
+            if ($w >= $h) {
+                $newW = $max;
+                $newH = (int) round($h * ($max / $w));
+            } else {
+                $newH = $max;
+                $newW = (int) round($w * ($max / $h));
+            }
+        }
+        $dst = imagecreatetruecolor($newW, $newH);
+        if ($dst === false) {
+            imagedestroy($src);
+            return null;
+        }
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $newW, $newH, $w, $h);
+        imagedestroy($src);
+        $ok = imagejpeg($dst, $cacheFull, self::PDF_IMAGE_JPEG_QUALITY);
+        imagedestroy($dst);
+        if (!$ok) {
+            return null;
+        }
+        return $cacheRelative;
     }
 
     /**

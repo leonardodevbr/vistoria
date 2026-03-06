@@ -75,29 +75,61 @@
         }
         
         .btn-primary {
-            background: #2563eb;
-            color: white;
+            background: #334155;
+            color: #fff;
         }
         
         .btn-primary:hover {
-            background: #1d4ed8;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+            background: #475569;
         }
         
         .btn-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
+            background: #0f766e;
+            color: #fff;
         }
         
         .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.4);
+            background: #115e59;
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-            color: white;
+            background: #b91c1c;
+            color: #fff;
+        }
+        
+        .btn-danger:hover {
+            background: #991b1b;
+        }
+        
+        .btn-outline {
+            background: #fff !important;
+            color: #475569 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+            color: #334155 !important;
+        }
+        .btn-outline-success {
+            background: #fff !important;
+            color: #0f766e !important;
+            border: 1px solid #0f766e !important;
+        }
+        .btn-outline-success:hover {
+            background: #ccfbf1 !important;
+            border-color: #0f766e !important;
+            color: #0f766e !important;
+        }
+        .btn-outline-danger {
+            background: #fff !important;
+            color: #b91c1c !important;
+            border: 1px solid #b91c1c !important;
+        }
+        .btn-outline-danger:hover {
+            background: #fee2e2 !important;
+            border-color: #b91c1c !important;
+            color: #b91c1c !important;
         }
         
         .card {
