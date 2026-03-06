@@ -376,6 +376,25 @@ class InspectionController extends Controller
             'assinaturaHash' => $assinaturaHash,
         ]);
 
+        try {
+            $dompdf = $pdf->getDomPDF();
+            $dompdf->setCallbacks([
+                [
+                    'event' => 'end_document',
+                    'f' => function (int $pageNumber, int $pageCount, $canvas, $fontMetrics) {
+                        $font = $fontMetrics->getFont($fontMetrics->getOptions()->getDefaultFont(), 'normal')
+                            ?: $fontMetrics->getFont('serif', 'normal');
+                        if ($font) {
+                            $text = "Página {$pageNumber} de {$pageCount}";
+                            $canvas->text(297, 820, $text, $font, 9, [0.4, 0.4, 0.4]);
+                        }
+                    },
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            // Se falhar a numeração, o PDF ainda é gerado
+        }
+
         $slug = $inspection->endereco
             ? Str::slug(Str::limit(trim($inspection->endereco), 80, ''))
             : '';
@@ -405,7 +424,9 @@ class InspectionController extends Controller
                 $pathsWithSource[] = ['path' => $item->foto, 'photo_id' => null];
             }
             foreach ($item->photos as $photo) {
-                $pathsWithSource[] = ['path' => $photo->path, 'photo_id' => $photo->id];
+                if ($photo->path !== $item->foto) {
+                    $pathsWithSource[] = ['path' => $photo->path, 'photo_id' => $photo->id];
+                }
             }
 
             $entries = [];

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laudo de Vistoria - #{{ $inspection->documento_numero ?? $inspection->id }}</title>
     <style>
+        @page {
+            margin-bottom: 28px;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -349,6 +352,10 @@
             color: #1b5e20;
             word-break: break-all;
         }
+        .ultima-pagina {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
     </style>
 </head>
 <body>
@@ -486,35 +493,37 @@
         @endforeach
     @endif
     
-    <div class="section-title">5. Declaração e assinaturas</div>
+    <div class="ultima-pagina">
+        <div class="section-title">5. Declaração e assinaturas</div>
 
-    <div class="declaracao-locatario">
-        O locatário declara que vistoriou o imóvel, concorda com as condições descritas neste laudo e recebe o imóvel nas condições aqui registradas.
-    </div>
-    
-    <div class="assinaturas">
-        <div class="assinatura-bloco">
-            <div class="linha-assinatura">{{ $inspection->responsavel ?: '_________________________________________' }}</div>
-            <div class="linha-nome">Responsável pela vistoria</div>
+        <div class="declaracao-locatario">
+            O locatário declara que vistoriou o imóvel, concorda com as condições descritas neste laudo e recebe o imóvel nas condições aqui registradas.
         </div>
-        <div class="assinatura-bloco">
-            <div class="linha-assinatura">{{ $inspection->locatario_nome ?: '_________________________________________' }}</div>
-            <div class="linha-nome">Locatário do imóvel</div>
+        
+        <div class="assinaturas">
+            <div class="assinatura-bloco">
+                <div class="linha-assinatura">{{ $inspection->responsavel ?: '_________________________________________' }}</div>
+                <div class="linha-nome">Responsável pela vistoria</div>
+            </div>
+            <div class="assinatura-bloco">
+                <div class="linha-assinatura">{{ $inspection->locatario_nome ?: '_________________________________________' }}</div>
+                <div class="linha-nome">Locatário do imóvel</div>
+            </div>
         </div>
-    </div>
 
-    @if(!empty($assinaturaHash))
-    <div class="assinatura-digital">
-        <strong>Documento aprovado e selado</strong> em {{ $inspection->aprovado_em->setTimezone('America/Sao_Paulo')->format('d/m/Y \à\s H:i') }} (horário de Brasília).<br>
-        Assinatura digital (SHA-256): <code>{{ $assinaturaHash }}</code><br>
-        <small>Esta assinatura vincula-se ao conteúdo do laudo no momento da aprovação. As imagens originais permanecem no servidor para verificação.</small>
-    </div>
-    @endif
-    
-    <div class="rodape">
-        <p>Documento gerado em {{ $generatedAt->format('d/m/Y H:i:s') }} (horário de Brasília).</p>
-        <p>As imagens originais permanecem armazenadas no servidor para eventuais consultas.</p>
-        <p>Sistema de Vistoria de Imóveis</p>
+        @if(!empty($assinaturaHash))
+        <div class="assinatura-digital">
+            <strong>Documento aprovado e selado</strong> em {{ $inspection->aprovado_em->setTimezone('America/Sao_Paulo')->format('d/m/Y \à\s H:i') }} (horário de Brasília).<br>
+            Assinatura digital (SHA-256): <code>{{ $assinaturaHash }}</code><br>
+            <small>Esta assinatura vincula-se ao conteúdo do laudo no momento da aprovação. As imagens originais permanecem no servidor para verificação.</small>
+        </div>
+        @endif
+        
+        <div class="rodape">
+            <p>Documento gerado em {{ $generatedAt->format('d/m/Y H:i:s') }} (horário de Brasília).</p>
+            <p>As imagens originais permanecem armazenadas no servidor para eventuais consultas.</p>
+            <p>Sistema de Vistoria de Imóveis</p>
+        </div>
     </div>
 </body>
 </html>
