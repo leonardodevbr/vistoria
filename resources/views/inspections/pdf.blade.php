@@ -110,6 +110,12 @@
             margin-bottom: 8px;
             color: #1a1a1a;
         }
+        .item-num {
+            display: inline-block;
+            min-width: 3em;
+            font-weight: bold;
+            color: #333;
+        }
         
         .item-line {
             font-size: 10pt;
@@ -264,11 +270,84 @@
             background: #f0f0f0;
             font-weight: bold;
         }
+
+        .aviso-originais {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .photo-container {
+            height: 200px;
+            width: 100%;
+            border: 1px solid #ccc;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            margin-bottom: 4px;
+        }
+        .photo-container img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+        }
+        .photo-caption {
+            font-size: 8pt;
+            color: #444;
+            margin-top: 2px;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .photos-grid {
+            width: 100%;
+            margin-top: 8px;
+        }
+        .photos-row {
+            margin-bottom: 8px;
+        }
+        .photo-cell-landscape {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .photo-cell-portrait {
+            width: 48%;
+            display: inline-block;
+            vertical-align: top;
+            margin-bottom: 8px;
+        }
+        .photos-table-cols {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .photos-table-cols td {
+            width: 50%;
+            vertical-align: top;
+            padding: 4px;
+        }
+        .photos-table-cols td.photo-cell-full {
+            width: 100%;
+        }
+        .declaracao-locatario {
+            margin-top: 20px;
+            padding: 12px 14px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            font-size: 10pt;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
     <div class="doc-title">Laudo de Vistoria de Imóvel</div>
     <div class="doc-subtitle">Documento nº {{ $inspection->documento_numero ?? $inspection->id }} | Data da vistoria: {{ $inspection->data_vistoria->format('d/m/Y') }} às {{ $inspection->data_vistoria->format('H:i') }}</div>
+
+    <p class="aviso-originais">As imagens originais permanecem armazenadas no servidor para eventuais consultas e comprovação.</p>
     
     <div class="section-title">1. Identificação do imóvel</div>
     
@@ -328,14 +407,24 @@
         
         <div class="section-title">4. Itens vistoriados</div>
         
-        @foreach($itemsPdf->groupBy('localizacao') as $localizacao => $items)
+        @php
+            $porLocalizacao = $itemsPdf->groupBy('localizacao');
+            $ordemAmbientes = ['Sala', 'Cozinha', 'Quarto', 'Quarto casal', 'Quarto 2', 'Banheiro', 'Banheiro social', 'Banheiro suíte', 'Área de serviço', 'Varanda', 'Garagem'];
+            $ambientesOrdenados = $porLocalizacao->sortBy(function ($_, $key) use ($ordemAmbientes) {
+                $pos = array_search($key, $ordemAmbientes);
+                return $pos === false ? 999 : $pos;
+            });
+        @endphp
+        @foreach($ambientesOrdenados as $localizacao => $items)
+            @php $ambienteNum = '4.' . $loop->iteration; @endphp
             <div class="category-block">
-                <div class="category-heading">{{ $localizacao ?: 'Sem localização' }}</div>
+                <div class="category-heading">{{ $ambienteNum }} {{ $localizacao ?: 'Sem localização' }}</div>
                 
                 @foreach($items as $item)
+                    @php $itemNum = $ambienteNum . '.' . $loop->iteration; @endphp
                     <div class="item-block">
                         <div class="item-block-inner">
-                            <div class="item-name">{!! html_entity_decode($item->item, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}</div>
+                            <div class="item-name"><span class="item-num">{{ $itemNum }}</span> {!! html_entity_decode($item->item, ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}</div>
                             
                             <table class="item-dados">
                                 @if($item->marca_modelo)
@@ -352,22 +441,34 @@
                             </div>
                             @endif
                             
-                            @php $photos = $item->allPhotos(); @endphp
-                            @if($photos->isNotEmpty())
+                            @php $itemPhotoRows = $photosForPdf[$item->id] ?? []; $totalItemPhotos = 0; foreach ($itemPhotoRows as $r) { $totalItemPhotos += count($r['entries']); } @endphp
+                            @if(count($itemPhotoRows) > 0)
                             <div class="photos-group">
-                                <div class="photos-group-title">Fotos ({{ $photos->count() }})</div>
-                                <table class="photos-table"><tr>
-                                    @foreach($photos as $idx => $photoPath)
-                                        @if($idx > 0 && $idx % 3 === 0)
-                                        </tr><tr>
-                                        @endif
-                                        <td><div class="photo-wrap"><img src="{{ public_path('storage/' . $photoPath) }}" class="photo" alt="Foto"></div></td>
-                                    @endforeach
-                                    @php $rest = (3 - ($photos->count() % 3)) % 3; @endphp
-                                    @for($i = 0; $i < $rest; $i++)
+                                <div class="photos-group-title">Fotos ({{ $totalItemPhotos }})</div>
+                                <table class="photos-table-cols" cellpadding="0" cellspacing="0">
+                                    @foreach($itemPhotoRows as $row)
+                                    <tr>
+                                        @if($row['landscape'])
+                                        <td colspan="2" class="photo-cell-full">
+                                            @foreach($row['entries'] as $entry)
+                                            <div class="photo-container"><img src="{{ public_path('storage/' . $entry['path']) }}" alt="Foto"></div>
+                                            <div class="photo-caption">ID: {{ $entry['hash'] }} — Item: {!! html_entity_decode($entry['item_name'], ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}</div>
+                                            @endforeach
+                                        </td>
+                                        @else
+                                        @foreach($row['entries'] as $entry)
+                                        <td>
+                                            <div class="photo-container"><img src="{{ public_path('storage/' . $entry['path']) }}" alt="Foto"></div>
+                                            <div class="photo-caption">ID: {{ $entry['hash'] }} — Item: {!! html_entity_decode($entry['item_name'], ENT_QUOTES | ENT_HTML5, 'UTF-8') !!}</div>
+                                        </td>
+                                        @endforeach
+                                        @if(count($row['entries']) === 1)
                                         <td></td>
-                                    @endfor
-                                </tr></table>
+                                        @endif
+                                        @endif
+                                    </tr>
+                                    @endforeach
+                                </table>
                             </div>
                             @endif
                         </div>
@@ -377,7 +478,11 @@
         @endforeach
     @endif
     
-    <div class="section-title">5. Assinaturas</div>
+    <div class="section-title">5. Declaração e assinaturas</div>
+
+    <div class="declaracao-locatario">
+        O locatário declara que vistoriou o imóvel, concorda com as condições descritas neste laudo e recebe o imóvel nas condições aqui registradas.
+    </div>
     
     <div class="assinaturas">
         <div class="assinatura-bloco">
@@ -391,7 +496,8 @@
     </div>
     
     <div class="rodape">
-        <p>Documento gerado em {{ now()->format('d/m/Y H:i:s') }}</p>
+        <p>Documento gerado em {{ $generatedAt->format('d/m/Y H:i:s') }} (horário de Brasília).</p>
+        <p>As imagens originais permanecem armazenadas no servidor para eventuais consultas.</p>
         <p>Sistema de Vistoria de Imóveis</p>
     </div>
 </body>

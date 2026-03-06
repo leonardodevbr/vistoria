@@ -8,6 +8,7 @@ use App\Models\InspectionItem;
 use App\Models\InspectionItemPhoto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class InspectionController extends Controller
 {
@@ -334,10 +335,87 @@ class InspectionController extends Controller
     public function generatePdf(Inspection $inspection)
     {
         $inspection->load(['items.photos']);
-        
-        $pdf = Pdf::loadView('inspections.pdf', compact('inspection'));
-        
+        $photosForPdf = $this->buildPhotosForPdf($inspection);
+        $generatedAt = Carbon::now('America/Sao_Paulo');
+
+        $pdf = Pdf::loadView('inspections.pdf', [
+            'inspection' => $inspection,
+            'photosForPdf' => $photosForPdf,
+            'generatedAt' => $generatedAt,
+        ]);
+
         return $pdf->download('vistoria-' . $inspection->id . '.pdf');
+    }
+
+    /**
+     * Monta fotos por item com path, orientação e hash para o PDF (sem alterar banco).
+     * Hash vinculado à vistoria + item + foto (id quando existe, senão path).
+     * @return array<int, array{path: string, landscape: bool, hash: string, item_name: string}[]>
+     */
+    private function buildPhotosForPdf(Inspection $inspection): array
+    {
+        $byItem = [];
+        $itemsPdf = $inspection->items->where('is_draft', false);
+
+        foreach ($itemsPdf as $item) {
+            $pathsWithSource = [];
+            if ($item->foto) {
+                $pathsWithSource[] = ['path' => $item->foto, 'photo_id' => null];
+            }
+            foreach ($item->photos as $photo) {
+                $pathsWithSource[] = ['path' => $photo->path, 'photo_id' => $photo->id];
+            }
+
+            $entries = [];
+            foreach ($pathsWithSource as $entry) {
+                $path = $entry['path'];
+                $fullPath = Storage::disk('public')->path($path);
+                $landscape = true;
+                if (file_exists($fullPath) && @getimagesize($fullPath)) {
+                    [$w, $h] = getimagesize($fullPath);
+                    $landscape = $w >= $h;
+                }
+                $hashInput = $inspection->id . '|' . $item->id . '|' . ($entry['photo_id'] ?? 'foto') . '|' . $path;
+                $hash = 'IMG-' . strtoupper(substr(hash('sha256', $hashInput), 0, 10));
+
+                $entries[] = [
+                    'path' => $path,
+                    'landscape' => $landscape,
+                    'hash' => $hash,
+                    'item_name' => $item->item,
+                ];
+            }
+            // Agrupa em linhas: 1 paisagem por linha ou 2 retratos por linha
+            $byItem[$item->id] = $this->groupPhotoEntriesIntoRows($entries);
+        }
+
+        return $byItem;
+    }
+
+    /**
+     * @param array<int, array{path: string, landscape: bool, hash: string, item_name: string}> $entries
+     * @return array<int, array{landscape: bool, entries: array}>
+     */
+    private function groupPhotoEntriesIntoRows(array $entries): array
+    {
+        $rows = [];
+        $i = 0;
+        while ($i < count($entries)) {
+            $entry = $entries[$i];
+            if ($entry['landscape']) {
+                $rows[] = ['landscape' => true, 'entries' => [$entry]];
+                $i++;
+            } else {
+                $rowEntries = [$entry];
+                $i++;
+                if ($i < count($entries) && !$entries[$i]['landscape']) {
+                    $rowEntries[] = $entries[$i];
+                    $i++;
+                }
+                $rows[] = ['landscape' => false, 'entries' => $rowEntries];
+            }
+        }
+        return $rows;
     }
 
     public function destroy(Inspection $inspection)

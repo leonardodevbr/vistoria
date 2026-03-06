@@ -74,10 +74,14 @@
             <select id="categoria" name="categoria" class="form-control">
                 <option value="">Selecione ou digite...</option>
                 <option value="Eletrodomésticos">Eletrodomésticos</option>
+                <option value="Utensílios">Utensílios</option>
+                <option value="Talheres">Talheres</option>
                 <option value="Eletrônicos">Eletrônicos</option>
                 <option value="Móveis">Móveis</option>
                 <option value="Planejados">Planejados</option>
                 <option value="Piso">Piso</option>
+                <option value="Parede">Parede</option>
+                <option value="Decoração">Decoração</option>
                 <option value="Revestimento">Revestimento</option>
                 <option value="Louças e metais">Louças e metais</option>
                 <option value="Área de Serviço">Área de Serviço</option>
@@ -96,6 +100,7 @@
             <select id="marca_modelo" name="marca_modelo" class="form-control">
                 <option value="">Selecione ou digite...</option>
                 <option value="Não se aplica">Não se aplica</option>
+                <option value="Não definido">Não definido</option>
                 <optgroup label="A">
                     <option value="AOC">AOC</option>
                     <option value="Arno">Arno</option>
@@ -347,10 +352,14 @@
                 <select id="editCategoria" name="categoria" class="form-control">
                     <option value="">Selecione ou digite...</option>
                     <option value="Eletrodomésticos">Eletrodomésticos</option>
+                    <option value="Utensílios">Utensílios</option>
+                    <option value="Talheres">Talheres</option>
                     <option value="Eletrônicos">Eletrônicos</option>
                     <option value="Móveis">Móveis</option>
                     <option value="Planejados">Planejados</option>
                     <option value="Piso">Piso</option>
+                    <option value="Parede">Parede</option>
+                    <option value="Decoração">Decoração</option>
                     <option value="Revestimento">Revestimento</option>
                     <option value="Louças e metais">Louças e metais</option>
                     <option value="Área de Serviço">Área de Serviço</option>
@@ -366,6 +375,7 @@
                 <select id="editMarcaModelo" name="marca_modelo" class="form-control">
                     <option value="">Selecione ou digite...</option>
                     <option value="Não se aplica">Não se aplica</option>
+                    <option value="Não definido">Não definido</option>
                     <optgroup label="A">
                         <option value="AOC">AOC</option>
                         <option value="Arno">Arno</option>
