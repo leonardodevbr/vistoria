@@ -23,6 +23,7 @@ class Inspection extends Model
         'data_vistoria',
         'aprovado_em',
         'assinatura_hash',
+        'pdf_path',
     ];
 
     protected $casts = [

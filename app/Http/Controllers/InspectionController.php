@@ -358,11 +358,57 @@ class InspectionController extends Controller
         $inspection->assinatura_hash = hash('sha256', $conteudo);
         $inspection->save();
 
+        // Gera e grava o PDF no storage como cópia imutável do aprovado
+        if ($inspection->items()->where('is_draft', false)->exists()) {
+            try {
+                $inspection->load(['items.photos']);
+                [$pdf, $downloadFilename] = $this->buildPdf($inspection);
+                $storagePath = 'pdfs/vistoria-' . $inspection->id . '-' . Str::slug(Str::limit(trim($inspection->endereco ?? ''), 50, '') ?: (string) $inspection->id, '') . '.pdf';
+                if (! Storage::disk('public')->exists('pdfs')) {
+                    Storage::disk('public')->makeDirectory('pdfs');
+                }
+                $pdf->save($storagePath, 'public');
+                $inspection->pdf_path = $storagePath;
+                $inspection->save();
+            } catch (\Throwable $e) {
+                // Falha ao gravar PDF não desfaz a aprovação; usuário pode baixar depois
+            }
+        }
+
         return redirect()->route('inspections.index')
             ->with('success', 'Vistoria aprovada. O documento está selado e não poderá mais ser alterado.');
     }
 
     public function generatePdf(Inspection $inspection)
+    {
+        $filename = $this->getPdfDownloadFilename($inspection);
+
+        // Se aprovada e já existe PDF gravado, servir o arquivo do storage (imutável)
+        if ($inspection->isAprovado() && $inspection->pdf_path && Storage::disk('public')->exists($inspection->pdf_path)) {
+            return Storage::disk('public')->download($inspection->pdf_path, $filename, [
+                'Content-Type' => 'application/pdf',
+            ]);
+        }
+
+        [$pdf, ] = $this->buildPdf($inspection);
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Nome do arquivo para download (ex.: vistoria-endereco-slug.pdf).
+     */
+    private function getPdfDownloadFilename(Inspection $inspection): string
+    {
+        $slug = $inspection->endereco
+            ? Str::slug(Str::limit(trim($inspection->endereco), 80, ''))
+            : '';
+        return ($slug !== '' ? 'vistoria-' . $slug : 'vistoria-' . $inspection->id) . '.pdf';
+    }
+
+    /**
+     * Monta o PDF (view + numeração de páginas). Retorna [Pdf, nome para download].
+     */
+    private function buildPdf(Inspection $inspection): array
     {
         $inspection->load(['items.photos']);
         $photosForPdf = $this->buildPhotosForPdf($inspection);
@@ -395,12 +441,7 @@ class InspectionController extends Controller
             // Se falhar a numeração, o PDF ainda é gerado
         }
 
-        $slug = $inspection->endereco
-            ? Str::slug(Str::limit(trim($inspection->endereco), 80, ''))
-            : '';
-        $filename = ($slug !== '' ? 'vistoria-' . $slug : 'vistoria-' . $inspection->id) . '.pdf';
-
-        return $pdf->download($filename);
+        return [$pdf, $this->getPdfDownloadFilename($inspection)];
     }
 
     /** Lado máximo (px) para imagens no PDF; proporção mantida. */
