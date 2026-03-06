@@ -341,6 +341,16 @@
             font-size: 10pt;
             line-height: 1.5;
         }
+        .assinatura-digital {
+            margin-top: 20px;
+            padding: 12px 14px;
+            background: #e8f5e9;
+            border: 1px solid #2e7d32;
+            font-size: 9pt;
+            line-height: 1.5;
+            color: #1b5e20;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -494,6 +504,14 @@
             <div class="linha-nome">Locatário do imóvel</div>
         </div>
     </div>
+
+    @if(!empty($assinaturaHash))
+    <div class="assinatura-digital">
+        <strong>Documento aprovado e selado</strong> em {{ $inspection->aprovado_em->setTimezone('America/Sao_Paulo')->format('d/m/Y \à\s H:i') }} (horário de Brasília).<br>
+        Assinatura digital (SHA-256): <code>{{ $assinaturaHash }}</code><br>
+        <small>Esta assinatura vincula-se ao conteúdo do laudo no momento da aprovação. As imagens originais permanecem no servidor para verificação.</small>
+    </div>
+    @endif
     
     <div class="rodape">
         <p>Documento gerado em {{ $generatedAt->format('d/m/Y H:i:s') }} (horário de Brasília).</p>

@@ -46,29 +46,42 @@
             </p>
             
             @php $itensCadastrados = $inspection->items->filter(fn($i) => $i->is_draft !== true); @endphp
-            <div style="margin-bottom: 1rem;">
+            <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                 <span class="badge badge-info">
                     {{ $itensCadastrados->count() }} {{ $itensCadastrados->count() == 1 ? 'item' : 'itens' }}
                 </span>
+                @if($inspection->isAprovado())
+                    <span class="badge badge-success" style="background: #16a34a; color: #fff;">
+                        <i data-lucide="lock" width="12" height="12" style="vertical-align: -2px;"></i> Aprovada
+                    </span>
+                @endif
             </div>
             
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-primary btn-sm btn-icon">
-                    <i data-lucide="file-text" width="16" height="16"></i> Dados
-                </a>
-                <a href="{{ route('inspections.items', $inspection) }}" class="btn btn-primary btn-sm btn-icon">
-                    <i data-lucide="list" width="16" height="16"></i> Itens
-                </a>
-                
+                @if(!$inspection->isAprovado())
+                    <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-primary btn-sm btn-icon">
+                        <i data-lucide="file-text" width="16" height="16"></i> Dados
+                    </a>
+                    <a href="{{ route('inspections.items', $inspection) }}" class="btn btn-primary btn-sm btn-icon">
+                        <i data-lucide="list" width="16" height="16"></i> Itens
+                    </a>
+                    @if($itensCadastrados->count() > 0)
+                        <form action="{{ route('inspections.approve', $inspection) }}" method="POST" style="display: inline;" onsubmit="return confirm('Ao aprovar, a vistoria ficará selada e não poderá mais ser alterada. Confirma?');">
+                            @csrf
+                            <button type="submit" class="btn btn-success btn-sm btn-icon">
+                                <i data-lucide="check-circle" width="16" height="16"></i> Aprovar
+                            </button>
+                        </form>
+                    @endif
+                    <button onclick="deleteInspection({{ $inspection->id }})" class="btn btn-danger btn-sm btn-icon">
+                        <i data-lucide="trash-2" width="16" height="16"></i> Excluir
+                    </button>
+                @endif
                 @if($itensCadastrados->count() > 0)
-                    <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-success btn-sm btn-icon">
-                        <i data-lucide="file-down" width="16" height="16"></i> Gerar PDF
+                    <a href="{{ route('inspections.pdf', $inspection) }}" class="btn btn-outline btn-sm btn-icon">
+                        <i data-lucide="file-down" width="16" height="16"></i> {{ $inspection->isAprovado() ? 'Baixar PDF' : 'Gerar PDF' }}
                     </a>
                 @endif
-                
-                <button onclick="deleteInspection({{ $inspection->id }})" class="btn btn-danger btn-sm btn-icon">
-                    <i data-lucide="trash-2" width="16" height="16"></i> Excluir
-                </button>
             </div>
         </div>
     @endforeach

@@ -12,6 +12,13 @@ use Carbon\Carbon;
 
 class InspectionController extends Controller
 {
+    private function ensureNotApproved(Inspection $inspection): void
+    {
+        if ($inspection->isAprovado()) {
+            abort(403, 'Esta vistoria foi aprovada e não pode mais ser alterada.');
+        }
+    }
+
     public function index()
     {
         $inspections = Inspection::with('items')->latest()->get();
@@ -32,12 +39,14 @@ class InspectionController extends Controller
 
     public function edit(Inspection $inspection)
     {
+        $this->ensureNotApproved($inspection);
         $inspection->load('items');
         return view('inspections.form', compact('inspection'));
     }
 
     public function update(Request $request, Inspection $inspection)
     {
+        $this->ensureNotApproved($inspection);
         $isAutosave = $request->header('X-Autosave') === '1';
 
         if ($isAutosave) {
@@ -118,6 +127,9 @@ class InspectionController extends Controller
     public function items(Inspection $inspection)
     {
         $inspection->load(['items.photos']);
+        if ($inspection->isAprovado()) {
+            return redirect()->route('inspections.index')->with('erro', 'Esta vistoria foi aprovada e não pode mais ser alterada.');
+        }
         $draftItem = $inspection->items()->where('is_draft', true)->latest()->first();
         return view('inspections.items', compact('inspection', 'draftItem'));
     }
@@ -142,6 +154,7 @@ class InspectionController extends Controller
 
     public function storeItem(Request $request, Inspection $inspection)
     {
+        $this->ensureNotApproved($inspection);
         $validated = $request->validate([
             'categoria' => 'nullable|string',
             'item' => 'required|string',
@@ -183,6 +196,7 @@ class InspectionController extends Controller
 
     public function updateItem(Request $request, InspectionItem $item)
     {
+        $this->ensureNotApproved($item->inspection);
         $isAutosave = $request->header('X-Autosave') === '1';
 
         if ($isAutosave) {
@@ -318,6 +332,7 @@ class InspectionController extends Controller
 
     public function deleteItem(InspectionItem $item)
     {
+        $this->ensureNotApproved($item->inspection);
         if ($item->foto) {
             Storage::disk('public')->delete($item->foto);
         }
@@ -332,16 +347,32 @@ class InspectionController extends Controller
         ]);
     }
 
+    public function approve(Inspection $inspection)
+    {
+        if ($inspection->isAprovado()) {
+            return redirect()->route('inspections.index')->with('erro', 'Esta vistoria já foi aprovada.');
+        }
+        $conteudo = $inspection->getConteudoParaAssinatura();
+        $inspection->aprovado_em = now();
+        $inspection->assinatura_hash = hash('sha256', $conteudo);
+        $inspection->save();
+
+        return redirect()->route('inspections.index')
+            ->with('success', 'Vistoria aprovada. O documento está selado e não poderá mais ser alterado.');
+    }
+
     public function generatePdf(Inspection $inspection)
     {
         $inspection->load(['items.photos']);
         $photosForPdf = $this->buildPhotosForPdf($inspection);
         $generatedAt = Carbon::now('America/Sao_Paulo');
+        $assinaturaHash = $inspection->assinatura_hash;
 
         $pdf = Pdf::loadView('inspections.pdf', [
             'inspection' => $inspection,
             'photosForPdf' => $photosForPdf,
             'generatedAt' => $generatedAt,
+            'assinaturaHash' => $assinaturaHash,
         ]);
 
         return $pdf->download('vistoria-' . $inspection->id . '.pdf');
@@ -420,6 +451,7 @@ class InspectionController extends Controller
 
     public function destroy(Inspection $inspection)
     {
+        $this->ensureNotApproved($inspection);
         foreach ($inspection->items as $item) {
             if ($item->foto) {
                 Storage::disk('public')->delete($item->foto);
