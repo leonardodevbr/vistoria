@@ -47,6 +47,19 @@
                 <option value="Sala">Sala</option>
                 <option value="Cozinha">Cozinha</option>
             </optgroup>
+            <optgroup label="Ambientes comerciais">
+                <option value="Recepção">Recepção</option>
+                <option value="Sala de Atendimento">Sala de Atendimento</option>
+                <option value="Sala Comercial">Sala Comercial</option>
+                <option value="Sala de Reunião">Sala de Reunião</option>
+                <option value="Consultório">Consultório</option>
+                <option value="Escritório">Escritório</option>
+                <option value="Copa">Copa</option>
+                <option value="Banheiro comercial">Banheiro comercial</option>
+                <option value="Corredor">Corredor</option>
+                <option value="Hall de entrada">Hall de entrada</option>
+                <option value="Depósito">Depósito</option>
+            </optgroup>
             <optgroup label="Quartos">
                 <option value="Quarto">Quarto</option>
                 <option value="Quarto casal">Quarto casal</option>
@@ -329,6 +342,19 @@
                     <optgroup label="Áreas sociais">
                         <option value="Sala">Sala</option>
                         <option value="Cozinha">Cozinha</option>
+                    </optgroup>
+                    <optgroup label="Ambientes comerciais">
+                        <option value="Recepção">Recepção</option>
+                        <option value="Sala de Atendimento">Sala de Atendimento</option>
+                        <option value="Sala Comercial">Sala Comercial</option>
+                        <option value="Sala de Reunião">Sala de Reunião</option>
+                        <option value="Consultório">Consultório</option>
+                        <option value="Escritório">Escritório</option>
+                        <option value="Copa">Copa</option>
+                        <option value="Banheiro comercial">Banheiro comercial</option>
+                        <option value="Corredor">Corredor</option>
+                        <option value="Hall de entrada">Hall de entrada</option>
+                        <option value="Depósito">Depósito</option>
                     </optgroup>
                     <optgroup label="Quartos">
                         <option value="Quarto">Quarto</option>
